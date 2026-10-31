@@ -31,6 +31,7 @@ class TestePipeline(unittest.TestCase):
     def test_cd_atualiza_branch_sem_force_e_verifica_sha_publicado(self):
         self.assertIn('HEAD:hostinger-pages', self.cd)
         self.assertNotIn('git push --force', self.cd)
+        self.assertIn('git commit --allow-empty', self.cd)
         self.assertIn('deployment-commit', self.cd)
         self.assertIn('Verificar publicação da Hostinger', self.cd)
 

@@ -61,6 +61,8 @@ O webhook recebe pushes de outras branches; a integração Hostinger deve perman
 
 O workflow aguarda até três minutos e procura no domínio a marca do SHA aprovado. Se ela não aparecer, a branch foi atualizada, mas o deploy Hostinger não está comprovado.
 
+Na primeira ativação, é aceitável que o workflow crie `hostinger-pages` e falhe na verificação porque o hPanel ainda não estava conectado. Depois de configurar Git e webhook, execute manualmente o mesmo SHA; um commit vazio controlado gera novo evento sem modificar os três arquivos.
+
 Para rollback, execute manualmente o workflow com um SHA anterior ainda ancestral da `main`. Ele recompõe os três arquivos e cria um novo commit em `hostinger-pages`, sem reescrever o histórico.
 
 **PRÁTICO:** localize um SHA anterior com `git log --oneline` e confira `git show <SHA>:frontend/index.html`, sem executar o deploy.

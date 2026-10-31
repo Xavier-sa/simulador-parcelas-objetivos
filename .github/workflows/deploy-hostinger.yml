@@ -106,7 +106,8 @@ jobs:
           cp "$PUBLIC_DIR/index.html" "$PUBLIC_DIR/style.css" "$PUBLIC_DIR/script.js" .
           test "$(find . -maxdepth 1 -type f | wc -l)" -eq 3
           git add index.html style.css script.js
-          git commit -m "publish: frontend de $DEPLOY_SHA"
+          # --allow-empty permite reacionar o webhook para o mesmo SHA após a configuração inicial.
+          git commit --allow-empty -m "publish: frontend de $DEPLOY_SHA"
           git push origin HEAD:hostinger-pages
           echo "public_commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
