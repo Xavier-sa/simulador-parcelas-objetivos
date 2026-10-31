@@ -1,0 +1,35 @@
+# Dados privados e backups
+data/*.json
+data/*.backup*
+data/*backup*
+backups/
+backup/
+
+# Credenciais
+.env
+.env.*
+!.env.example
+*.pem
+*.key
+credentials.json
+secrets.json
+
+# Python, testes e temporários
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.coverage
+htmlcov/
+backend/_parcelas_*_teste.json
+backend/migrar_dados_2026.py
+*.tmp
+*.temp
+*.log
+.DS_Store
+Thumbs.db
+.idea/
+.vscode/
+.vercel/
+
+# Ferramenta visual auxiliar, fora do produto
+responsive-lab.html

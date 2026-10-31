@@ -1,0 +1,13 @@
+# Nunca enviar dados privados ou backups ao pacote da função.
+data/
+backend/migrar_dados_2026.py
+**/__pycache__/
+*.pyc
+.env
+.env.*
+!.env.example
+
+# Arquivos que não são necessários na função Python.
+frontend/
+docs/
+responsive-lab.html
