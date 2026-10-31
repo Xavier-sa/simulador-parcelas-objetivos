@@ -40,6 +40,12 @@ class TesteDeployHostinger(unittest.TestCase):
         self.assertNotIn('src="/', html)
         self.assertIn('Versão: __DEPLOY_SHA__', html)
 
+    def test_aba_tem_nome_claro_e_favicon_embutido(self):
+        html = (self.deploy / 'index.html').read_text(encoding='utf-8')
+        self.assertIn('<title>Simulador de Parcelas | Objetivos</title>', html)
+        self.assertIn('rel="icon"', html)
+        self.assertIn('data:image/svg+xml,', html)
+
     def test_pacote_nao_contem_dados_privados(self):
         conteudo = '\n'.join(
             arquivo.read_text(encoding='utf-8')

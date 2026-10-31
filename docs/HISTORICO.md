@@ -1,5 +1,10 @@
 # Histórico de alterações
 
+## 31/10/2026 — identificação da aba do navegador
+
+- Melhorado o título para `Simulador de Parcelas | Objetivos`.
+- Adicionado favicon SVG simples e embutido, sem aumentar o pacote público além dos três arquivos existentes.
+
 ## 31/10/2026 — diagnóstico seguro do deploy Hostinger
 
 - Inspecionado o run público `41184361538`: CI, preparação e push de `hostinger-pages` passaram; somente a verificação HTTP falhou.
