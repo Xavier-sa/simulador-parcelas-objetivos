@@ -1,0 +1,129 @@
+name: Deploy Hostinger
+
+on:
+  # Só recebe commits da main depois que o workflow CI terminou.
+  workflow_run:
+    workflows: [CI]
+    types: [completed]
+    branches: [main]
+  workflow_dispatch:
+    inputs:
+      commit_sha:
+        description: SHA completo de um commit já presente na main
+        required: true
+        type: string
+
+permissions:
+  contents: read
+
+# Nunca deixa duas publicações escreverem simultaneamente no mesmo destino.
+concurrency:
+  group: hostinger-production
+  cancel-in-progress: false
+
+jobs:
+  publicar:
+    name: Publicar frontend aprovado
+    if: >-
+      github.event_name == 'workflow_dispatch' ||
+      (github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.event == 'push' &&
+      github.event.workflow_run.head_branch == 'main')
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: production-hostinger
+      url: https://simulador-parcelas.wasxtech.com.br
+    env:
+      DEPLOY_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.commit_sha }}
+      HOSTINGER_HOST: ${{ secrets.HOSTINGER_HOST }}
+      HOSTINGER_PORT: ${{ secrets.HOSTINGER_PORT }}
+      HOSTINGER_USER: ${{ secrets.HOSTINGER_USER }}
+      HOSTINGER_SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
+      HOSTINGER_KNOWN_HOSTS: ${{ secrets.HOSTINGER_KNOWN_HOSTS }}
+      REMOTE_PATH: ${{ vars.HOSTINGER_DEPLOY_PATH }}
+
+    steps:
+      # O ref é o SHA aprovado pela CI, não o HEAD mais recente da branch.
+      - name: Baixar o commit aprovado
+        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        with:
+          ref: ${{ env.DEPLOY_SHA }}
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Confirmar SHA e vínculo com main
+        shell: bash
+        run: |
+          set -euo pipefail
+          test "$(git rev-parse HEAD)" = "$DEPLOY_SHA"
+          git show-ref --verify --quiet refs/remotes/origin/main
+          git merge-base --is-ancestor "$DEPLOY_SHA" origin/main
+
+      - name: Preparar somente arquivos públicos
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir _publicacao
+          cp frontend/index.html frontend/style.css frontend/config.js frontend/script.js _publicacao/
+          test "$(find _publicacao -maxdepth 1 -type f | wc -l)" -eq 4
+          grep -Fq 'https://simulador-parcelas-objetivos.vercel.app' _publicacao/config.js
+          python scripts/validar_publicacao.py
+
+      - name: Validar configuração SSH
+        shell: bash
+        run: |
+          set -euo pipefail
+          test -n "$HOSTINGER_HOST"
+          test -n "$HOSTINGER_PORT"
+          test -n "$HOSTINGER_USER"
+          test -n "$HOSTINGER_SSH_KEY"
+          test -n "$HOSTINGER_KNOWN_HOSTS"
+          test -n "$REMOTE_PATH"
+          [[ "$HOSTINGER_PORT" =~ ^[0-9]+$ ]]
+          [[ "$REMOTE_PATH" == /home/*/domains/wasxtech.com.br/public_html/simulador-parcelas ]]
+
+      - name: Instalar chave e host conhecido
+        shell: bash
+        run: |
+          set -euo pipefail
+          install -d -m 700 ~/.ssh
+          printf '%s\n' "$HOSTINGER_SSH_KEY" > ~/.ssh/hostinger_key
+          printf '%s\n' "$HOSTINGER_KNOWN_HOSTS" > ~/.ssh/known_hosts
+          chmod 600 ~/.ssh/hostinger_key ~/.ssh/known_hosts
+
+      - name: Enviar para diretório temporário
+        shell: bash
+        run: |
+          set -euo pipefail
+          TEMP_PATH="$REMOTE_PATH/.incoming-$DEPLOY_SHA"
+          SSH_ARGS=(-i ~/.ssh/hostinger_key -p "$HOSTINGER_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes)
+          ssh "${SSH_ARGS[@]}" "$HOSTINGER_USER@$HOSTINGER_HOST" "mkdir -p -- '$TEMP_PATH'"
+          scp -i ~/.ssh/hostinger_key -P "$HOSTINGER_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
+            _publicacao/index.html _publicacao/style.css _publicacao/config.js _publicacao/script.js \
+            "$HOSTINGER_USER@$HOSTINGER_HOST:$TEMP_PATH/"
+
+      - name: Ativar somente os quatro arquivos
+        shell: bash
+        run: |
+          set -euo pipefail
+          SSH_ARGS=(-i ~/.ssh/hostinger_key -p "$HOSTINGER_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes)
+          ssh "${SSH_ARGS[@]}" "$HOSTINGER_USER@$HOSTINGER_HOST" sh -s -- "$REMOTE_PATH" "$DEPLOY_SHA" <<'REMOTE_SCRIPT'
+          set -eu
+          target=$1
+          sha=$2
+          incoming="$target/.incoming-$sha"
+          rollback="$target/.rollback-$sha"
+          files='index.html style.css config.js script.js'
+          mkdir -p -- "$rollback"
+          for file in $files; do
+            test -f "$incoming/$file"
+            if test -f "$target/$file"; then
+              cp -p -- "$target/$file" "$rollback/$file"
+            fi
+          done
+          for file in $files; do
+            mv -f -- "$incoming/$file" "$target/$file"
+          done
+          rmdir -- "$incoming"
+          REMOTE_SCRIPT
