@@ -25,7 +25,7 @@ class TesteAPIPublica(unittest.TestCase):
 
     def setUp(self):
         self.ambiente = dict(os.environ)
-        os.environ['HOSTINGER_ALLOWED_ORIGIN'] = 'https://exemplo.com.br'
+        os.environ['HOSTINGER_ALLOWED_ORIGIN'] = 'https://simulador-parcelas.wasxtech.com.br'
         os.environ['ALLOW_LOCALHOST_CORS'] = 'true'
 
     def tearDown(self):
@@ -51,9 +51,9 @@ class TesteAPIPublica(unittest.TestCase):
             self.assertTrue(dados.get('demonstracao') or dados.get('modo') == 'demonstracao')
 
     def test_cors_permita_hostinger_e_recuse_origem_desconhecida(self):
-        status, headers, _ = self.requisitar('GET', '/api/health', 'https://exemplo.com.br')
+        status, headers, _ = self.requisitar('GET', '/api/health', 'https://simulador-parcelas.wasxtech.com.br')
         self.assertEqual(status, 200)
-        self.assertEqual(headers.get('Access-Control-Allow-Origin'), 'https://exemplo.com.br')
+        self.assertEqual(headers.get('Access-Control-Allow-Origin'), 'https://simulador-parcelas.wasxtech.com.br')
         _, headers, _ = self.requisitar('GET', '/api/health', 'https://site-invasor.test')
         self.assertNotIn('Access-Control-Allow-Origin', headers)
 

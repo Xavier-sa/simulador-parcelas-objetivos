@@ -9,5 +9,7 @@ backend/migrar_dados_2026.py
 
 # Arquivos que não são necessários na função Python.
 frontend/
+deploy/
+scripts/
 docs/
 responsive-lab.html

@@ -7,6 +7,9 @@ const formatoData = iso => iso ? iso.split('-').reverse().join('/') : 'Concluíd
 const moeda = valor => valor === null ? 'Não informado' : Number(valor).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
 
 async function requisicao(caminho) {
+  if (!API_BASE_URL) {
+    throw new Error('API ainda não configurada. Informe a URL da Vercel em config.js após o primeiro deploy.');
+  }
   let resposta;
   try {
     resposta = await fetch(`${API_BASE_URL}${caminho}`, {method: 'GET'});

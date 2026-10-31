@@ -14,11 +14,12 @@ from api.demo_data import DEMO_PARCELAMENTOS  # noqa: E402
 
 ROTAS_GET = {'/api/health', '/api/resumo', '/api/parcelamentos'}
 ORIGENS_LOCAIS = {'http://localhost:8000', 'http://127.0.0.1:8000'}
+ORIGEM_HOSTINGER = 'https://simulador-parcelas.wasxtech.com.br'
 
 
 def origens_permitidas():
     origens = set()
-    producao = os.environ.get('HOSTINGER_ALLOWED_ORIGIN', '').rstrip('/')
+    producao = os.environ.get('HOSTINGER_ALLOWED_ORIGIN', ORIGEM_HOSTINGER).rstrip('/')
     if producao:
         origens.add(producao)
     if os.environ.get('ALLOW_LOCALHOST_CORS', '').lower() == 'true':
