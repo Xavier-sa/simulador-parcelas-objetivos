@@ -46,7 +46,7 @@ jobs:
     steps:
       # O ref é o SHA aprovado pela CI, não o HEAD mais recente da branch.
       - name: Baixar o commit aprovado
-        uses: actions/checkout@11bd71901bbe5b1630ceea73d27597364c9af683 # v4.2.2
+        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, Node.js 24
         with:
           ref: ${{ env.DEPLOY_SHA }}
           fetch-depth: 0
@@ -71,17 +71,9 @@ jobs:
           python scripts/validar_publicacao.py
 
       - name: Validar configuração SSH
-        shell: bash
-        run: |
-          set -euo pipefail
-          test -n "$HOSTINGER_HOST"
-          test -n "$HOSTINGER_PORT"
-          test -n "$HOSTINGER_USER"
-          test -n "$HOSTINGER_SSH_KEY"
-          test -n "$HOSTINGER_KNOWN_HOSTS"
-          test -n "$REMOTE_PATH"
-          [[ "$HOSTINGER_PORT" =~ ^[0-9]+$ ]]
-          [[ "$REMOTE_PATH" == /home/*/domains/wasxtech.com.br/public_html/simulador-parcelas ]]
+        env:
+          HOSTINGER_DEPLOY_PATH: ${{ vars.HOSTINGER_DEPLOY_PATH }}
+        run: python scripts/validar_config_hostinger.py
 
       - name: Instalar chave e host conhecido
         shell: bash
@@ -104,6 +96,7 @@ jobs:
             "$HOSTINGER_USER@$HOSTINGER_HOST:$TEMP_PATH/"
 
       - name: Ativar somente os três arquivos
+        id: ativacao
         shell: bash
         run: |
           set -euo pipefail
@@ -124,6 +117,45 @@ jobs:
           done
           for file in $files; do
             mv -f -- "$incoming/$file" "$target/$file"
+            test -f "$target/$file"
           done
           rmdir -- "$incoming"
+          REMOTE_SCRIPT
+
+      - name: Verificar site publicado
+        id: verificacao
+        shell: bash
+        run: |
+          set -euo pipefail
+          SITE='https://simulador-parcelas.wasxtech.com.br'
+          curl --fail --silent --show-error --location --max-time 20 \
+            --retry 5 --retry-delay 5 --retry-all-errors \
+            "$SITE/?sha=$DEPLOY_SHA" -o pagina.html
+          grep -Fq '<title>Objetivos' pagina.html
+          curl --fail --silent --show-error --location --max-time 20 \
+            --retry 5 --retry-delay 5 --retry-all-errors \
+            "$SITE/script.js?sha=$DEPLOY_SHA" -o publicado.js
+          grep -Fq 'https://simulador-parcelas-objetivos.vercel.app' publicado.js
+
+      # Se a ativação terminou mas a verificação pública falhou, restaura a cópia anterior.
+      - name: Restaurar versão anterior após falha de verificação
+        if: failure() && steps.ativacao.outcome == 'success'
+        shell: bash
+        run: |
+          set -euo pipefail
+          SSH_ARGS=(-i ~/.ssh/hostinger_key -p "$HOSTINGER_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes)
+          ssh "${SSH_ARGS[@]}" "$HOSTINGER_USER@$HOSTINGER_HOST" sh -s -- "$REMOTE_PATH" "$DEPLOY_SHA" <<'REMOTE_SCRIPT'
+          set -eu
+          target=$1
+          sha=$2
+          rollback="$target/.rollback-$sha"
+          files='index.html style.css script.js'
+          restaurados=0
+          for file in $files; do
+            if test -f "$rollback/$file"; then
+              cp -p -- "$rollback/$file" "$target/$file"
+              restaurados=$((restaurados + 1))
+            fi
+          done
+          test "$restaurados" -eq 3
           REMOTE_SCRIPT

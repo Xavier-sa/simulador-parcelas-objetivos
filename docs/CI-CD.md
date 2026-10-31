@@ -49,6 +49,53 @@ Em **GitHub → Settings → Secrets and variables → Actions**, cadastre no am
 
 Nunca copie valores desses Secrets para arquivos do repositório. Configure proteção do ambiente com revisores obrigatórios, se o plano permitir.
 
+### Causa da falha observada
+
+No run `41175833129`, os cinco Secrets e a variável chegaram vazios. O workflow estava associado ao ambiente correto e bloqueou antes do upload. Portanto, a causa principal é configuração manual ausente, não falha do frontend, do SHA ou da API. O YAML foi melhorado para listar apenas os nomes ausentes.
+
+### Preparar uma chave exclusiva
+
+**LEIGO:** a chave pública é o cadeado colocado na Hostinger; a chave privada é a única chave que abre esse cadeado e fica protegida no GitHub.
+
+**TÉCNICO:** use um par Ed25519 dedicado, sem reutilizar sua chave pessoal. A private key vira Secret; somente a public key é autorizada no servidor.
+
+No PowerShell local:
+
+```powershell
+ssh-keygen -t ed25519 -a 100 -C "github-actions-simulador-parcelas" -f "$env:USERPROFILE\.ssh\hostinger_deploy_simulador"
+```
+
+Para automação não interativa, a chave precisa estar utilizável pelo runner sem prompt. Proteja esse risco restringindo a chave à conta de hospedagem, usando ambiente protegido e removendo-a no hPanel quando não for mais necessária.
+
+### Autorizar e identificar a conexão
+
+1. No hPanel, abra **Websites → Dashboard → SSH Access** e habilite SSH.
+2. Copie de lá o host/IP, porta e usuário reais.
+3. Em **Add SSH key**, cole todo o conteúdo de `hostinger_deploy_simulador.pub`.
+4. Cadastre o conteúdo do arquivo privado `hostinger_deploy_simulador` como `HOSTINGER_SSH_KEY` no ambiente GitHub.
+5. Não presuma porta ou usuário. A porta frequente da Hostinger é 65002, mas vale a informação exibida na conta.
+
+SSH por chave está disponível nos planos compatíveis da Hostinger; planos Single ou modo Website Builder podem não oferecer shell. Se houver apenas SFTP, o workflow atual, que usa comandos remotos seguros para ativação e rollback, não é compatível. Nesse caso, mantenha o CD bloqueado e publique o ZIP pelo hPanel/SFTP até escolher uma automação específica para SFTP.
+
+### Known hosts e teste sem expor segredo
+
+Obtenha a chave apresentada pelo servidor usando os valores reais:
+
+```powershell
+ssh-keyscan -p <PORTA> <HOST> | Set-Content -Encoding ascii hostinger_known_hosts
+ssh-keygen -lf hostinger_known_hosts
+```
+
+Compare a impressão digital com a exibida no hPanel ou confirmada pelo suporte Hostinger. Só depois cadastre o conteúdo de `hostinger_known_hosts` como `HOSTINGER_KNOWN_HOSTS`.
+
+Teste localmente sem imprimir a chave:
+
+```powershell
+ssh -i "$env:USERPROFILE\.ssh\hostinger_deploy_simulador" -p <PORTA> -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=hostinger_known_hosts <USUARIO>@<HOST> "pwd; test -d '/home/u587444950/domains/wasxtech.com.br/public_html/simulador-parcelas'; test -w '/home/u587444950/domains/wasxtech.com.br/public_html/simulador-parcelas'"
+```
+
+**PRÁTICO:** execute primeiro apenas `pwd` e compare o diretório retornado com o caminho informado, sem criar, mover ou apagar arquivos.
+
 ## Vercel versus Hostinger
 
 **LEIGO:** a Vercel observa o GitHub por conta própria. A Hostinger recebe os três arquivos públicos pelo nosso workflow.
@@ -63,6 +110,8 @@ O CD baixa o SHA aprovado, confirma que ele pertence à `main`, prepara somente 
 
 O workflow requer SSH com execução de comandos fixos. Se a conta tiver somente SFTP, não cadastre os Secrets para este workflow: gere o ZIP e extraia manualmente seus três arquivos pelo hPanel/SFTP.
 
+Depois da ativação, o workflow consulta o domínio com HTTPS e confere o título da página e a URL Vercel em `script.js`. Se essa etapa falhar, restaura os três arquivos guardados em `.rollback-<SHA>` e mantém o job reprovado para investigação.
+
 ## Rollback
 
 **LEIGO:** rollback é voltar aos três arquivos que estavam no site antes de uma publicação.
@@ -74,3 +123,5 @@ O workflow requer SSH com execução de comandos fixos. Se a conta tiver somente
 ## Como reconhecer falha
 
 Na aba Actions, verde significa que todos os steps passaram; vermelho indica falha. Abra o job, localize o primeiro step vermelho e leia a mensagem. Não reexecute repetidamente um deploy sem entender a causa.
+
+Quando um Secret estiver ausente, o log agora mostra, por exemplo, `Erro: HOSTINGER_HOST não configurado no ambiente production-hostinger.` O conteúdo do Secret nunca é impresso.

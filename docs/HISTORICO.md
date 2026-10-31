@@ -1,5 +1,15 @@
 # Histórico de alterações
 
+## 31/10/2026 — diagnóstico definitivo do CD Hostinger
+
+- Confirmada a falha do run `41175833129` por Secrets e variável ausentes no ambiente `production-hostinger`.
+- Substituído o `exit code 1` genérico por mensagens individuais sem exposição de valores.
+- Tornada exata a validação do diretório remoto autorizado.
+- Atualizados `actions/checkout` e `actions/setup-python` para releases estáveis baseadas em Node.js 24, fixadas por SHA.
+- Adicionada verificação HTTP do HTML e JavaScript publicados.
+- Adicionado rollback automático dos três arquivos se a verificação pública pós-ativação falhar.
+- API Python e configuração Vercel preservadas.
+
 ## 31/10/2026 — correção do pacote Hostinger
 
 - Reutilizado o `frontend/index.html` existente, sem página alternativa ou redirecionamento.

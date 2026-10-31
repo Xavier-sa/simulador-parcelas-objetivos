@@ -89,3 +89,16 @@ Somente depois dessa confirmação, extraia `deploy/simulador-parcelas-hostinger
 **TÉCNICO:** `.gitignore`, `.vercelignore`, API demonstrativa imutável e testes do artefato impedem a inclusão acidental de persistência local e dados privados.
 
 Para CI/CD, Secrets, proteção da `main` e rollback, consulte `docs/CI-CD.md`.
+
+## Primeiro deploy automático
+
+1. Confirme no hPanel que SSH por chave e shell estão habilitados para o plano.
+2. Cadastre os cinco Secrets e `HOSTINGER_DEPLOY_PATH` no ambiente `production-hostinger`.
+3. Proteja o ambiente com revisores, se desejar aprovação antes da produção.
+4. Após autorização, envie o commit para `main` ou faça merge de um PR aprovado.
+5. Acompanhe **Actions → CI**; somente depois do verde abrirá **Deploy Hostinger**.
+6. O deploy deve passar por validação, upload temporário, ativação e verificação pública.
+
+Se o ambiente exigir revisores, o processo pausa antes de liberar os Secrets. Isso preserva a segurança, mas significa que o deploy não é totalmente automático até uma pessoa aprovar.
+
+Para confirmar a publicação, abra os logs do step **Verificar site publicado** e depois acesse `https://simulador-parcelas.wasxtech.com.br`. Em caso de falha após ativação, confira também o step de restauração.

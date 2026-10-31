@@ -40,3 +40,9 @@ O DNS do subdomínio foi resolvido em 31/10/2026. O caminho interno da Hostinger
 - `.github/workflows/deploy-hostinger.yml`: publica somente após CI aprovada para o mesmo SHA da `main` ou por execução manual protegida.
 - A Vercel mantém sua integração Git nativa; não foi criado deploy duplicado por CLI.
 - O CD Hostinger depende da confirmação de SSH com shell, dos Secrets e da variável documentados em `docs/CI-CD.md`.
+
+## Falha do Deploy Hostinger #2
+
+O run `41175833129`, no commit `6cb7c2a0f641c4a093d9926dde829dcbf61de2bb`, parou em **Validar configuração SSH**. Checkout, SHA e pacote público já haviam passado. A causa confirmada foi a ausência dos cinco Environment Secrets e da variável `HOSTINGER_DEPLOY_PATH`; nenhuma transferência ocorreu.
+
+O workflow agora informa nominalmente cada configuração ausente, sem mostrar valores. Também usa Actions compatíveis com Node.js 24, verifica o site depois da ativação e tenta rollback automático se a verificação pública falhar.
