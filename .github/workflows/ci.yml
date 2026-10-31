@@ -30,7 +30,7 @@ jobs:
           python-version: '3.12'
 
       - name: Verificar sintaxe Python
-        run: python -m compileall -q api backend scripts/validar_publicacao.py
+        run: python -m compileall -q api backend scripts/validar_publicacao.py scripts/verificar_deploy.py
 
       - name: Conferir regressão financeira histórica
         run: python -m unittest discover -s backend -p "test_historico_financeiro.py"

@@ -55,8 +55,14 @@ A falha atual ocorre antes do push: `HOSTINGER_PAGES_TOKEN` ainda precisa existi
 
 ## Atualização financeira aguardando publicação
 
-O commit funcional local `767ea69` substitui os exemplos antigos por Objetivo principal e Objetivo secundário, ambos com 67 parcelas e 33 pagamentos fictícios. Também adiciona o marcador visível `Versão: <SHA>` ao artefato gerado pelo CD. Foram aprovados 33 testes locais. CI, Vercel, `hostinger-pages`, entrega do webhook e Hostinger ainda não foram comprovados porque não houve push.
+O commit funcional `767ea69` substituiu os exemplos antigos por Objetivo principal e Objetivo secundário, ambos com 67 parcelas e 33 pagamentos fictícios. Também adicionou o marcador visível `Versão: <SHA>` ao artefato gerado pelo CD. O CI e o push de `hostinger-pages` foram comprovados no run #9; o usuário e a verificação posterior confirmaram a versão no domínio.
 
 Antes do push, as URLs públicas foram consultadas em `31/10/2026`: Vercel respondeu 200, CORS autorizou a origem Hostinger, OPTIONS respondeu 204 e POST respondeu 405. A produção ainda apresentava o cenário antigo (R$ 3.420,00 contratados) e a Hostinger servia o SHA `c8e8413116850ea73f912cb469b78e2533c16824`, como esperado antes da nova publicação.
 
 Próxima etapa: após autorização, enviar a `main` e observar cada elo sem realizar deploy manual.
+
+## Diagnóstico da verificação do run #9
+
+O run `41184361538` aprovou o CI e atualizou `hostinger-pages` para o commit público `1273203`, mas a verificação terminou após aproximadamente 3 minutos sem registrar as respostas intermediárias. Depois, o domínio foi confirmado com HTTP 200, `text/html` e o SHA esperado `3453a1e028c6b4133719f3692b461de6f80886f1`.
+
+Não há evidência suficiente para afirmar se, durante as 18 tentativas, houve HTTP diferente de 200, conteúdo antigo ou atraso de publicação. A causa confirmada é a falta de diagnóstico do verificador anterior. O novo `scripts/verificar_deploy.py` registra cada status e diferencia rede, HTTP, conteúdo e versão, mantendo falha quando não há comprovação.

@@ -104,10 +104,22 @@ Se o ambiente exigir revisores, o processo pausa antes de liberar os Secrets. Is
 
 Para confirmar a publicação, abra os logs do step **Verificar publicação da Hostinger** e confira a entrega do webhook e o último deploy no hPanel.
 
-## Teste controlado pendente
+## Teste controlado executado
 
-O commit funcional `767ea69` está preparado localmente. Não houve push ou deploy. Depois da autorização, não use o botão de deploy manual: acompanhe a CI, a criação/atualização de `hostinger-pages`, a entrega do webhook existente, o histórico automático do hPanel e por fim o SHA visível no domínio.
+Os commits `767ea69` e `3453a1e` foram enviados e o fluxo atualizou `hostinger-pages`. O domínio passou a exibir o SHA esperado e os dados corrigidos, embora o run #9 tenha encerrado antes de reconhecê-los. A próxima alteração deve repetir a observação sem usar o botão de deploy manual.
 
 Linha de base medida antes do teste: API Vercel acessível com GET 200, OPTIONS 204 e POST 405; CORS permitiu exatamente a origem Hostinger. O frontend estava acessível com a marca `c8e8413116850ea73f912cb469b78e2533c16824` e ainda consumia os exemplos anteriores. Isso não comprova o novo CD; serve para comparar o estado depois do push autorizado.
 
 Se a integração Hostinger foi recriada, abra a configuração **Auto Deployment** no hPanel e compare cuidadosamente a URL mostrada com a Payload URL do webhook existente em GitHub **Settings → Webhooks**. Se forem diferentes, desative ou corrija o cadastro antigo em vez de criar duplicatas. Nunca copie essas URLs para a documentação ou para o frontend.
+
+## Repetir somente a validação
+
+Sem publicar nada, execute:
+
+```powershell
+python scripts/verificar_deploy.py --url https://simulador-parcelas.wasxtech.com.br --sha SHA_COMPLETO --tentativas 1 --intervalo 0 --timeout 10
+```
+
+Para o CD, o workflow usa 24 tentativas, intervalo de 10 segundos e timeout de 10 segundos. Mesmo no pior caso, a verificação permanece dentro do limite de 10 minutos do job. Redirecionamentos HTTPS são seguidos pela biblioteca padrão, mas o log mostra somente esquema, host e caminho finais. TLS continua validado; não há opção insegura.
+
+No run #9, os logs comprovaram o push da branch, mas não guardaram status ou HTML das tentativas. Por isso, atraso, cache e bloqueio HTTP permanecem hipóteses não confirmadas para aquela janela. A consulta posterior com o novo script confirmou HTTP 200, `text/html` e o SHA esperado.

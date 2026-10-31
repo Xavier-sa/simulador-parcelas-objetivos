@@ -1,5 +1,14 @@
 # Histórico de alterações
 
+## 31/10/2026 — diagnóstico seguro do deploy Hostinger
+
+- Inspecionado o run público `41184361538`: CI, preparação e push de `hostinger-pages` passaram; somente a verificação HTTP falhou.
+- Confirmado posteriormente HTTP 200, Content-Type HTML e SHA `3453a1e028c6b4133719f3692b461de6f80886f1` no domínio.
+- Substituída a verificação silenciosa por script Python que classifica rede, HTTP, conteúdo e versão.
+- Ampliada a janela nominal de observação de 18 para 24 tentativas, com 10 segundos de intervalo e timeout de 10 segundos por requisição.
+- Adicionados testes isolados para SHA correto/antigo, HTTP 403/404/500, timeout e meta ausente.
+- API, cálculos financeiros, frontend, webhook e credenciais não foram alterados.
+
 ## 31/10/2026 — correção do cenário financeiro demonstrativo
 
 - Commit funcional local: `767ea69`.
@@ -9,7 +18,7 @@
 - Adicionado identificador visual de versão, preenchido pelo workflow com o SHA aprovado.
 - Executados 33 testes locais, verificação JavaScript e validação de privacidade.
 - Registrado o estado público anterior: API com dados antigos, CORS funcional, escrita bloqueada e frontend no SHA `c8e8413116850ea73f912cb469b78e2533c16824`.
-- Nenhum push, webhook ou deploy foi acionado; resultados remotos permanecem pendentes.
+- Naquela etapa local, nenhum push, webhook ou deploy havia sido acionado; a publicação posterior está registrada na seção acima.
 
 ## 31/10/2026 — finalização do fluxo por webhook
 

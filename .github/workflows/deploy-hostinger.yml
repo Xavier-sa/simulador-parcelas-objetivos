@@ -71,6 +71,8 @@ jobs:
           PUBLIC_DIR="$RUNNER_TEMP/hostinger-pages"
           mkdir -p "$PUBLIC_DIR"
           cp frontend/index.html frontend/style.css frontend/script.js "$PUBLIC_DIR/"
+          # O checkout será trocado para a branch pública; preservamos o verificador fora dele.
+          cp scripts/verificar_deploy.py "$RUNNER_TEMP/verificar_deploy.py"
           python scripts/validar_publicacao.py
           python - "$PUBLIC_DIR/index.html" "$DEPLOY_SHA" <<'PYTHON'
           from pathlib import Path
@@ -116,18 +118,10 @@ jobs:
 
       # O hPanel recebe o push por webhook; a marca confirma o SHA realmente servido.
       - name: Verificar publicação da Hostinger
-        shell: bash
-        run: |
-          set -euo pipefail
-          SITE='https://simulador-parcelas.wasxtech.com.br'
-          for tentativa in $(seq 1 18); do
-            if curl --fail --silent --show-error --location --max-time 20 \
-              "$SITE/?sha=$DEPLOY_SHA&tentativa=$tentativa" -o pagina.html && \
-              grep -Fq "deployment-commit\" content=\"$DEPLOY_SHA" pagina.html; then
-              echo "Hostinger publicou o SHA $DEPLOY_SHA."
-              exit 0
-            fi
-            sleep 10
-          done
-          echo '::error::A branch foi atualizada, mas o SHA não apareceu no domínio dentro do prazo.'
-          exit 1
+        run: >-
+          python "$RUNNER_TEMP/verificar_deploy.py"
+          --url https://simulador-parcelas.wasxtech.com.br
+          --sha "$DEPLOY_SHA"
+          --tentativas 24
+          --intervalo 10
+          --timeout 10

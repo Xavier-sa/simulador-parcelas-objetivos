@@ -40,6 +40,9 @@ class TestePipeline(unittest.TestCase):
         self.assertIn('deployment-commit', self.cd)
         self.assertIn("html.replace('__DEPLOY_SHA__', sha)", self.cd)
         self.assertIn('Verificar publicação da Hostinger', self.cd)
+        self.assertIn('cp scripts/verificar_deploy.py "$RUNNER_TEMP/verificar_deploy.py"', self.cd)
+        self.assertIn('python "$RUNNER_TEMP/verificar_deploy.py"', self.cd)
+        self.assertNotIn('curl --fail --silent', self.cd)
 
     def test_cd_publica_somente_tres_arquivos(self):
         linha = next(

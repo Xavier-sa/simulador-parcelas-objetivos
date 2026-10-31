@@ -72,7 +72,26 @@ Foram avaliadas duas alternativas. O `GITHUB_TOKEN` é mais simples, mas eventos
 
 O workflow aguarda até três minutos e procura no domínio a marca do SHA aprovado. Se ela não aparecer, a branch foi atualizada, mas o deploy Hostinger não está comprovado.
 
-Para a atualização `767ea69`, as evidências remotas estão deliberadamente pendentes até a autorização do push. O teste deve seguir: CI verde → novo commit em `hostinger-pages` → entrega 2xx em **Recent Deliveries** → deploy no hPanel → mesmo SHA no rodapé público. Uma falha deve ser atribuída ao primeiro elo que não apresentar evidência.
+Para a atualização que terminou em `3453a1e`, CI, novo commit em `hostinger-pages` e versão no domínio foram comprovados. O run #9 ficou vermelho exclusivamente porque não reconheceu a publicação dentro da janela e não registrava detalhes das tentativas. Em execuções futuras, uma falha deve ser atribuída ao primeiro elo que não apresentar evidência.
+
+## Como interpretar a verificação HTTP
+
+O step executa `scripts/verificar_deploy.py`. Cada tentativa informa código HTTP, Content-Type e resultado da comparação, sem imprimir cookies ou cabeçalhos sensíveis:
+
+- `HTTP 200` + `text/html` + SHA correto: publicação aprovada;
+- `HTTP 200` + SHA antigo: versão ainda divergente; pode ser atraso ou cache, ainda sem causa confirmada;
+- `HTTP 403`: acesso automatizado negado; não tentar contornar WAF ou CAPTCHA;
+- `HTTP 404`: conferir rota e document root do subdomínio;
+- `HTTP 5xx` ou timeout: falha transitória, com nova tentativa dentro do limite;
+- HTML sem `deployment-commit` ou Content-Type diferente: conteúdo publicado não atende ao contrato.
+
+Após 24 tentativas sem confirmação, o step termina em falha com `Branch publicada no GitHub; verificação do domínio inconclusiva.` Isso registra que o push aconteceu sem produzir sucesso falso para o deploy.
+
+**LEIGO:** agora o robô diz se encontrou uma porta fechada, uma página errada ou uma versão antiga, em vez de informar apenas “não funcionou”.
+
+**TÉCNICO:** o verificador valida transporte, status, media type e um marcador de integridade de versão extraído por `HTMLParser`, com cache-busting, TLS padrão e retries limitados.
+
+**PRÁTICO:** use `curl.exe -i https://simulador-parcelas.wasxtech.com.br` e identifique separadamente a linha do status, o `Content-Type` e a meta `deployment-commit`. Não use `-k`.
 
 Na primeira ativação, é aceitável que o workflow crie `hostinger-pages` e falhe na verificação porque o hPanel ainda não estava conectado. Depois de configurar Git e webhook, execute manualmente o mesmo SHA; um commit vazio controlado gera novo evento sem modificar os três arquivos.
 
