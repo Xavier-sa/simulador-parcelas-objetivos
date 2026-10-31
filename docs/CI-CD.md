@@ -18,6 +18,14 @@ A CI executa em PR, push na `main` e manualmente. PR nunca publica: o CD exige u
 
 `hostinger-pages` contém diretamente na raiz apenas `index.html`, `style.css` e `script.js`. O workflow não usa force push, preservando o histórico. O HTML recebe uma meta `deployment-commit` com o SHA aprovado para verificação posterior.
 
+O mesmo SHA substitui `__DEPLOY_SHA__` no rodapé, mostrando `Versão: <SHA>` sem alterar a aparência básica. Assim, a versão vista pela pessoa e a marca verificada automaticamente têm a mesma origem.
+
+**LEIGO:** o SHA funciona como o número de série da versão publicada.
+
+**TÉCNICO:** o CD usa `workflow_run.head_sha`, valida que ele pertence à `main` e injeta esse valor no artefato isolado antes do commit em `hostinger-pages`.
+
+**PRÁTICO:** depois de uma publicação autorizada, compare o rodapé do site com o SHA exibido no run da CI.
+
 ## Autenticação do push
 
 Crie um fine-grained Personal Access Token dedicado:
@@ -63,6 +71,8 @@ Foram avaliadas duas alternativas. O `GITHUB_TOKEN` é mais simples, mas eventos
 ## Verificação e rollback
 
 O workflow aguarda até três minutos e procura no domínio a marca do SHA aprovado. Se ela não aparecer, a branch foi atualizada, mas o deploy Hostinger não está comprovado.
+
+Para a atualização `767ea69`, as evidências remotas estão deliberadamente pendentes até a autorização do push. O teste deve seguir: CI verde → novo commit em `hostinger-pages` → entrega 2xx em **Recent Deliveries** → deploy no hPanel → mesmo SHA no rodapé público. Uma falha deve ser atribuída ao primeiro elo que não apresentar evidência.
 
 Na primeira ativação, é aceitável que o workflow crie `hostinger-pages` e falhe na verificação porque o hPanel ainda não estava conectado. Depois de configurar Git e webhook, execute manualmente o mesmo SHA; um commit vazio controlado gera novo evento sem modificar os três arquivos.
 

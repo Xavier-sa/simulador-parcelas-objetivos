@@ -18,6 +18,24 @@ percentual pago = quantidade paga ÷ quantidade total × 100
 mensalidade combinada = mensalidade principal + mensalidade secundária
 ```
 
+## Cenário público de demonstração
+
+Data-base fixa: `29/10/2026`. Essa data torna o exemplo reproduzível; ela não representa a data de uma dívida real.
+
+| Objetivo | Parcela | Total | Pagas | Contratado | Pago | Saldo |
+|---|---:|---:|---:|---:|---:|---:|
+| Principal | R$ 1.000,00 | 67 | 33 | R$ 67.000,00 | R$ 33.000,00 | R$ 34.000,00 |
+| Secundário | R$ 100,00 | 67 | 33 | R$ 6.700,00 | R$ 3.300,00 | R$ 3.400,00 |
+| Combinado | R$ 1.100,00/mês | — | — | R$ 73.700,00 | R$ 36.300,00 | R$ 37.400,00 |
+
+Cada objetivo está 49,25% quitado (`33 ÷ 67 × 100`), tem 34 parcelas restantes, próximo vencimento em `10/11/2026` e último vencimento em `10/08/2029`. A origem pública é exclusivamente `api/demo_data.py`; o JSON privado não participa da API.
+
+**LEIGO:** usamos um exemplo fixo para que todas as pessoas vejam a mesma conta e consigam conferi-la.
+
+**TÉCNICO:** valores monetários entram como strings e são calculados com `Decimal`; calendário e agregação permanecem em `backend/parcelas.py`.
+
+**PRÁTICO:** confirme `33 × 1.000 + 33 × 100 = 36.300` e `73.700 − 36.300 = 37.400`.
+
 ## Calendário
 
 - Parcela 1 usa o primeiro vencimento.

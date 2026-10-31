@@ -77,6 +77,7 @@ Somente depois dessa confirmação, extraia `deploy/simulador-parcelas-hostinger
 3. No DevTools → Network, confirme que `/api/resumo` vai para a URL Vercel e retorna JSON 200.
 4. Confirme que nenhuma chamada POST, PUT ou DELETE é feita.
 5. Teste uma rota inexistente e confirme JSON 404 na API.
+6. Compare `Versão: <SHA>` no rodapé com o SHA aprovado pela CI.
 
 ## Decisões
 
@@ -102,3 +103,11 @@ Para CI/CD, Secrets, proteção da `main` e rollback, consulte `docs/CI-CD.md`.
 Se o ambiente exigir revisores, o processo pausa antes de liberar os Secrets. Isso preserva a segurança, mas significa que o deploy não é totalmente automático até uma pessoa aprovar.
 
 Para confirmar a publicação, abra os logs do step **Verificar publicação da Hostinger** e confira a entrega do webhook e o último deploy no hPanel.
+
+## Teste controlado pendente
+
+O commit funcional `767ea69` está preparado localmente. Não houve push ou deploy. Depois da autorização, não use o botão de deploy manual: acompanhe a CI, a criação/atualização de `hostinger-pages`, a entrega do webhook existente, o histórico automático do hPanel e por fim o SHA visível no domínio.
+
+Linha de base medida antes do teste: API Vercel acessível com GET 200, OPTIONS 204 e POST 405; CORS permitiu exatamente a origem Hostinger. O frontend estava acessível com a marca `c8e8413116850ea73f912cb469b78e2533c16824` e ainda consumia os exemplos anteriores. Isso não comprova o novo CD; serve para comparar o estado depois do push autorizado.
+
+Se a integração Hostinger foi recriada, abra a configuração **Auto Deployment** no hPanel e compare cuidadosamente a URL mostrada com a Payload URL do webhook existente em GitHub **Settings → Webhooks**. Se forem diferentes, desative ou corrija o cadastro antigo em vez de criar duplicatas. Nunca copie essas URLs para a documentação ou para o frontend.

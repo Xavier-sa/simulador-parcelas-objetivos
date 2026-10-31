@@ -1,5 +1,16 @@
 # Histórico de alterações
 
+## 31/10/2026 — correção do cenário financeiro demonstrativo
+
+- Commit funcional local: `767ea69`.
+- Substituídos curso e equipamento por Objetivo principal e Objetivo secundário.
+- Fixada a data-base fictícia em `29/10/2026` e preservados 67 vencimentos, dos quais 33 pagos em cada objetivo.
+- Confirmados R$ 73.700,00 contratados, R$ 36.300,00 pagos, R$ 37.400,00 restantes e mensalidade de R$ 1.100,00.
+- Adicionado identificador visual de versão, preenchido pelo workflow com o SHA aprovado.
+- Executados 33 testes locais, verificação JavaScript e validação de privacidade.
+- Registrado o estado público anterior: API com dados antigos, CORS funcional, escrita bloqueada e frontend no SHA `c8e8413116850ea73f912cb469b78e2533c16824`.
+- Nenhum push, webhook ou deploy foi acionado; resultados remotos permanecem pendentes.
+
 ## 31/10/2026 — finalização do fluxo por webhook
 
 - Diagnosticada a falha atual como ausência de `HOSTINGER_PAGES_TOKEN` no Environment `production-hostinger`, antes de qualquer push.

@@ -12,7 +12,7 @@ A arquitetura foi separada sem alterar as regras financeiras de `backend/parcela
 - `vercel.json` encaminha as três URLs públicas para a função única;
 - `.gitignore` impede a inclusão dos dados reais, backups, segredos e cache.
 
-Não há persistência pública nesta fase. POST, PUT e DELETE retornam HTTP 405. A data de referência da demonstração é calculada no dia da requisição.
+Não há persistência pública nesta fase. POST, PUT e DELETE retornam HTTP 405. O cenário público usa a data-base fixa `29/10/2026`, definida junto aos dados fictícios, para que os resultados sejam reproduzíveis.
 
 ## Antes de continuar
 
@@ -52,3 +52,11 @@ O workflow agora informa nominalmente cada configuração ausente, sem mostrar v
 O workflow SSH foi substituído pela publicação incremental da branch `hostinger-pages`. O novo CD exige somente `HOSTINGER_PAGES_TOKEN`, restrito ao repositório e com `Contents: read/write`. A branch contém apenas `index.html`, `style.css` e `script.js` na raiz e não usa force push.
 
 A falha atual ocorre antes do push: `HOSTINGER_PAGES_TOKEN` ainda precisa existir como Secret do Environment `production-hostinger`. Sem ele, a branch não é atualizada e o webhook já cadastrado não recebe um novo evento. A ativação também depende de o hPanel estar apontando para `hostinger-pages` e para a raiz confirmada do subdomínio. Nenhuma URL de webhook foi criada, substituída ou registrada no repositório por esta preparação.
+
+## Atualização financeira aguardando publicação
+
+O commit funcional local `767ea69` substitui os exemplos antigos por Objetivo principal e Objetivo secundário, ambos com 67 parcelas e 33 pagamentos fictícios. Também adiciona o marcador visível `Versão: <SHA>` ao artefato gerado pelo CD. Foram aprovados 33 testes locais. CI, Vercel, `hostinger-pages`, entrega do webhook e Hostinger ainda não foram comprovados porque não houve push.
+
+Antes do push, as URLs públicas foram consultadas em `31/10/2026`: Vercel respondeu 200, CORS autorizou a origem Hostinger, OPTIONS respondeu 204 e POST respondeu 405. A produção ainda apresentava o cenário antigo (R$ 3.420,00 contratados) e a Hostinger servia o SHA `c8e8413116850ea73f912cb469b78e2533c16824`, como esperado antes da nova publicação.
+
+Próxima etapa: após autorização, enviar a `main` e observar cada elo sem realizar deploy manual.
