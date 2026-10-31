@@ -41,9 +41,7 @@ jobs:
       # node --check analisa a sintaxe sem executar o JavaScript no navegador.
       - name: Verificar sintaxe JavaScript
         run: |
-          node --check frontend/config.js
           node --check frontend/script.js
-          node --check deploy/hostinger/config.js
           node --check deploy/hostinger/script.js
 
       - name: Validar arquivos, JSON e privacidade

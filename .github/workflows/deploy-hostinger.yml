@@ -65,9 +65,9 @@ jobs:
         run: |
           set -euo pipefail
           mkdir _publicacao
-          cp frontend/index.html frontend/style.css frontend/config.js frontend/script.js _publicacao/
-          test "$(find _publicacao -maxdepth 1 -type f | wc -l)" -eq 4
-          grep -Fq 'https://simulador-parcelas-objetivos.vercel.app' _publicacao/config.js
+          cp frontend/index.html frontend/style.css frontend/script.js _publicacao/
+          test "$(find _publicacao -maxdepth 1 -type f | wc -l)" -eq 3
+          grep -Fq 'https://simulador-parcelas-objetivos.vercel.app' _publicacao/script.js
           python scripts/validar_publicacao.py
 
       - name: Validar configuração SSH
@@ -100,10 +100,10 @@ jobs:
           SSH_ARGS=(-i ~/.ssh/hostinger_key -p "$HOSTINGER_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes)
           ssh "${SSH_ARGS[@]}" "$HOSTINGER_USER@$HOSTINGER_HOST" "mkdir -p -- '$TEMP_PATH'"
           scp -i ~/.ssh/hostinger_key -P "$HOSTINGER_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
-            _publicacao/index.html _publicacao/style.css _publicacao/config.js _publicacao/script.js \
+            _publicacao/index.html _publicacao/style.css _publicacao/script.js \
             "$HOSTINGER_USER@$HOSTINGER_HOST:$TEMP_PATH/"
 
-      - name: Ativar somente os quatro arquivos
+      - name: Ativar somente os três arquivos
         shell: bash
         run: |
           set -euo pipefail
@@ -114,7 +114,7 @@ jobs:
           sha=$2
           incoming="$target/.incoming-$sha"
           rollback="$target/.rollback-$sha"
-          files='index.html style.css config.js script.js'
+          files='index.html style.css script.js'
           mkdir -p -- "$rollback"
           for file in $files; do
             test -f "$incoming/$file"

@@ -21,10 +21,11 @@ class TestePipeline(unittest.TestCase):
                        'head_sha', 'git rev-parse HEAD', 'merge-base --is-ancestor'):
             self.assertIn(trecho, self.cd)
 
-    def test_cd_transfere_somente_quatro_arquivos(self):
+    def test_cd_transfere_somente_tres_arquivos(self):
         linha = next(linha for linha in self.cd.splitlines() if linha.strip().startswith('cp frontend/'))
-        for nome in ('index.html', 'style.css', 'config.js', 'script.js'):
+        for nome in ('index.html', 'style.css', 'script.js'):
             self.assertIn(f'frontend/{nome}', linha)
+        self.assertNotIn('config.js', linha)
         for proibido in ('backend/', 'api/', 'data/', 'docs/'):
             self.assertNotIn(proibido, linha)
 

@@ -1,5 +1,14 @@
 # Histórico de alterações
 
+## 31/10/2026 — correção do pacote Hostinger
+
+- Reutilizado o `frontend/index.html` existente, sem página alternativa ou redirecionamento.
+- Reduzido o pacote público para `index.html`, `style.css` e `script.js`.
+- Centralizada a URL Vercel no topo de `script.js`; removido o `config.js` desnecessário.
+- Melhorado o tratamento de falha de conexão, CORS, HTTP e JSON inválido.
+- Criado ZIP com `index.html` diretamente na raiz e teste automatizado de sua estrutura.
+- API Python, regras financeiras, armazenamento, endpoints e `vercel.json` preservados.
+
 ## 31/10/2026 — CI/CD seguro e mínimo
 
 - Criada CI para sintaxe, unittest, regressão financeira, JavaScript, JSON, arquivos essenciais e privacidade.

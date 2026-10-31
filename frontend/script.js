@@ -2,25 +2,28 @@
 const cartoes = document.querySelector('#cartoes');
 const historico = document.querySelector('#historico');
 const mensagem = document.querySelector('#mensagem');
-const API_BASE_URL = (window.APP_CONFIG?.apiBaseUrl || '').replace(/\/$/, '');
+// Configuração pública centralizada; esta URL não é credencial.
+const API_BASE_URL = 'https://simulador-parcelas-objetivos.vercel.app';
 const formatoData = iso => iso ? iso.split('-').reverse().join('/') : 'Concluído';
 const moeda = valor => valor === null ? 'Não informado' : Number(valor).toLocaleString('pt-BR', {style: 'currency', currency: 'BRL'});
 
 async function requisicao(caminho) {
-  if (!API_BASE_URL) {
-    throw new Error('API ainda não configurada. Informe a URL da Vercel em config.js após o primeiro deploy.');
-  }
   let resposta;
   try {
     resposta = await fetch(`${API_BASE_URL}${caminho}`, {method: 'GET'});
   } catch (_) {
-    throw new Error('Não foi possível conectar à API. Confira config.js e a configuração de CORS.');
+    throw new Error('Não foi possível conectar à API. Verifique sua conexão ou a configuração de CORS.');
   }
   const tipo = resposta.headers.get('Content-Type') || '';
   if (!tipo.toLowerCase().includes('application/json')) {
     throw new Error(`A API respondeu em formato inesperado (HTTP ${resposta.status}).`);
   }
-  const dados = await resposta.json();
+  let dados;
+  try {
+    dados = await resposta.json();
+  } catch (_) {
+    throw new Error(`A API enviou JSON inválido (HTTP ${resposta.status}).`);
+  }
   if (!resposta.ok) throw new Error(dados.erro || 'A consulta não pôde ser concluída.');
   return dados;
 }

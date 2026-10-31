@@ -51,7 +51,7 @@ Nunca copie valores desses Secrets para arquivos do repositório. Configure prot
 
 ## Vercel versus Hostinger
 
-**LEIGO:** a Vercel observa o GitHub por conta própria. A Hostinger recebe os quatro arquivos pelo nosso workflow.
+**LEIGO:** a Vercel observa o GitHub por conta própria. A Hostinger recebe os três arquivos públicos pelo nosso workflow.
 
 **TÉCNICO:** o CI não bloqueia automaticamente a integração Git da Vercel. Configure proteção da `main` exigindo o check **Validar aplicação** antes do merge. Se disponível no plano Vercel, use Deployment Checks ou promoção manual para impedir produção antes da aprovação.
 
@@ -59,17 +59,17 @@ Nunca copie valores desses Secrets para arquivos do repositório. Configure prot
 
 ## Segurança do deploy Hostinger
 
-O CD baixa o SHA aprovado, confirma que ele pertence à `main`, prepara somente quatro arquivos, impede concorrência e exige host conhecido. O upload vai primeiro para `.incoming-<SHA>`. Antes da substituição, os quatro arquivos anteriores são copiados para `.rollback-<SHA>`.
+O CD baixa o SHA aprovado, confirma que ele pertence à `main`, prepara somente três arquivos, impede concorrência e exige host conhecido. O upload vai primeiro para `.incoming-<SHA>`. Antes da substituição, os três arquivos anteriores são copiados para `.rollback-<SHA>`.
 
-O workflow requer SSH com execução de comandos fixos. Se a conta tiver somente SFTP, não cadastre os Secrets para este workflow: gere `deploy/hostinger/` e envie manualmente os quatro arquivos pelo hPanel/SFTP.
+O workflow requer SSH com execução de comandos fixos. Se a conta tiver somente SFTP, não cadastre os Secrets para este workflow: gere o ZIP e extraia manualmente seus três arquivos pelo hPanel/SFTP.
 
 ## Rollback
 
-**LEIGO:** rollback é voltar aos quatro arquivos que estavam no site antes de uma publicação.
+**LEIGO:** rollback é voltar aos três arquivos que estavam no site antes de uma publicação.
 
 **TÉCNICO:** cada deploy preserva os arquivos anteriores em `.rollback-<SHA>`. Um operador com SSH pode copiá-los de volta após confirmar o SHA e o diretório. Outra opção é executar manualmente o workflow informando um SHA anterior que ainda pertença à `main`.
 
-**PRÁTICO:** sem executar em produção, identifique no histórico Git o SHA que seria usado em um rollback e confira seus quatro arquivos com `git show`.
+**PRÁTICO:** sem executar em produção, identifique no histórico Git o SHA que seria usado em um rollback e confira seus três arquivos com `git show`.
 
 ## Como reconhecer falha
 

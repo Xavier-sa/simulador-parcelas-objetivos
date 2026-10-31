@@ -45,7 +45,7 @@ class TesteHTTP(unittest.TestCase):
         for caminho in ('/api/resumo', '/api/parcelamentos'):
             status, tipo, corpo = self.requisitar('GET', caminho)
             self.assertEqual(status, 200); self.assertIn('application/json', tipo); json.loads(corpo)
-        for caminho, esperado in (('/', 'text/html'), ('/style.css', 'text/css'), ('/config.js', 'text/javascript'), ('/script.js', 'text/javascript')):
+        for caminho, esperado in (('/', 'text/html'), ('/style.css', 'text/css'), ('/script.js', 'text/javascript')):
             status, tipo, _ = self.requisitar('GET', caminho)
             self.assertEqual(status, 200); self.assertIn(esperado, tipo)
 

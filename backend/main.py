@@ -58,7 +58,6 @@ class Servidor(BaseHTTPRequestHandler):
         arquivos = {
             '/': ('index.html', 'text/html'),
             '/style.css': ('style.css', 'text/css'),
-            '/config.js': ('config.js', 'text/javascript'),
             '/script.js': ('script.js', 'text/javascript'),
         }
         if caminho not in arquivos:

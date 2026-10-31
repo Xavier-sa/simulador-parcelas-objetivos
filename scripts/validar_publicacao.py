@@ -5,8 +5,7 @@ from pathlib import Path
 RAIZ = Path(__file__).resolve().parent.parent
 ESSENCIAIS = {
     'api/index.py', 'api/demo_data.py', 'backend/parcelas.py',
-    'frontend/index.html', 'frontend/style.css', 'frontend/config.js',
-    'frontend/script.js', 'vercel.json',
+    'frontend/index.html', 'frontend/style.css', 'frontend/script.js', 'vercel.json',
 }
 PUBLICOS = [RAIZ / 'frontend', RAIZ / 'deploy' / 'hostinger', RAIZ / 'api']
 PROIBIDOS = ('parcelas.json', 'backup-antes', 'BEGIN PRIVATE KEY', '1000.00')

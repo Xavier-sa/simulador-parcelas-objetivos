@@ -8,7 +8,7 @@ A arquitetura foi separada sem alterar as regras financeiras de `backend/parcela
 
 - a aplicação privada local continua em `backend/main.py` e `backend/storage.py`;
 - a API pública fica em `api/index.py`, usa somente `api/demo_data.py` e aceita apenas GET/OPTIONS;
-- o frontend público fica em `frontend/` e obtém a URL da API em `frontend/config.js`;
+- o frontend público fica em `frontend/`; a URL pública da API está centralizada no topo de `frontend/script.js`;
 - `vercel.json` encaminha as três URLs públicas para a função única;
 - `.gitignore` impede a inclusão dos dados reais, backups, segredos e cache.
 
@@ -28,6 +28,7 @@ Em 31/10/2026, o repositório e seus objetos Git foram auditados. O histórico c
 - Frontend: `https://simulador-parcelas.wasxtech.com.br`.
 - Diretório informado: `/home/u587444950/domains/wasxtech.com.br/public_html/simulador-parcelas`.
 - Artefato para envio: `deploy/hostinger/`, gerado de `frontend/` por `scripts/gerar-deploy-hostinger.ps1`.
+- ZIP para upload manual: `deploy/simulador-parcelas-hostinger.zip`, com `index.html` diretamente na raiz.
 - Backend: Vercel Function em `api/index.py`, publicada em `https://simulador-parcelas-objetivos.vercel.app`.
 - CORS de produção: somente a origem exata do subdomínio acima.
 

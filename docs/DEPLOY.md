@@ -7,7 +7,7 @@ Nenhuma publicação ou alteração remota é feita automaticamente.
 ```text
 Navegador
   ├─ Hostinger: https://simulador-parcelas.wasxtech.com.br
-  │    └─ HTML, CSS, config.js e script.js
+  │    └─ index.html, style.css e script.js
   └─ Vercel: https://simulador-parcelas-objetivos.vercel.app
        └─ API Python /api/health, /api/resumo e /api/parcelamentos
 ```
@@ -38,10 +38,10 @@ Resultados esperados: GET 200 com JSON, POST 405 e OPTIONS 204 com a origem auto
 
 ## 2. Gerar o frontend da Hostinger
 
-`frontend/config.js` já contém a URL real:
+O topo de `frontend/script.js` contém a URL pública:
 
 ```javascript
-apiBaseUrl: ambienteLocal ? 'http://127.0.0.1:8000' : 'https://simulador-parcelas-objetivos.vercel.app'
+const API_BASE_URL = 'https://simulador-parcelas-objetivos.vercel.app';
 ```
 
 Depois gere o artefato:
@@ -54,8 +54,9 @@ powershell -NoProfile -ExecutionPolicy Bypass -File scripts\gerar-deploy-hosting
 
 - `index.html`
 - `style.css`
-- `config.js`
 - `script.js`
+
+O mesmo comando cria `deploy/simulador-parcelas-hostinger.zip`. Dentro dele, `index.html` fica diretamente na raiz.
 
 Não edite a cópia gerada como fonte principal; altere `frontend/` e gere novamente.
 
@@ -67,7 +68,7 @@ Diretório informado: `/home/u587444950/domains/wasxtech.com.br/public_html/simu
 
 O DNS do subdomínio resolve, mas DNS não comprova o diretório interno. No hPanel, abra **Domínios → Subdomínios** e confirme que o “diretório raiz/document root” é exatamente o caminho informado. Por SSH, uma alternativa é conferir o caminho e os arquivos sem mover ou apagar nada.
 
-Somente depois dessa confirmação, envie o conteúdo de `deploy/hostinger/` para o diretório — não envie a pasta `deploy/hostinger` como uma subpasta adicional.
+Somente depois dessa confirmação, extraia `deploy/simulador-parcelas-hostinger.zip` diretamente em `/home/u587444950/domains/wasxtech.com.br/public_html/simulador-parcelas`. O resultado precisa ser `.../simulador-parcelas/index.html`, não `.../simulador-parcelas/hostinger/index.html` nem outra subpasta.
 
 ## 4. Verificação final
 
@@ -79,7 +80,7 @@ Somente depois dessa confirmação, envie o conteúdo de `deploy/hostinger/` par
 
 ## Decisões
 
-**LEIGO:** a Vercel precisa ser publicada primeiro para descobrirmos seu endereço. Depois colocamos esse endereço no frontend e enviamos somente quatro arquivos para a Hostinger.
+**LEIGO:** o site precisa encontrar `index.html` logo na pasta principal do subdomínio. O ZIP já organiza os três arquivos dessa maneira.
 
 **TÉCNICO:** a API base não é inferida nem inventada. O artefato estático é reproduzível, usa caminhos relativos e consome uma origem distinta protegida por allowlist CORS exata.
 

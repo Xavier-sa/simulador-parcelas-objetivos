@@ -44,7 +44,7 @@
 
 **LEIGO:** são configurações fornecidas ao programa sem gravá-las diretamente no código.
 
-**TÉCNICO:** `HOSTINGER_ALLOWED_ORIGIN` configura a origem de produção; `ALLOW_LOCALHOST_CORS` controla a exceção local. Segredos nunca devem ir a `config.js`, pois JavaScript entregue ao navegador é público.
+**TÉCNICO:** `HOSTINGER_ALLOWED_ORIGIN` configura a origem de produção; `ALLOW_LOCALHOST_CORS` controla a exceção local. Segredos nunca devem ir ao JavaScript, pois todo arquivo entregue ao navegador é público.
 
 **PRÁTICO:** copie os nomes de `.env.example` para a configuração da Vercel, sem enviar um arquivo `.env` ao Git.
 
