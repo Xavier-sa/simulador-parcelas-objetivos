@@ -22,3 +22,20 @@ Não há persistência pública nesta fase. POST, PUT e DELETE retornam HTTP 405
 4. Só implemente escrita após autenticação e banco externo.
 
 Em 31/10/2026, o repositório e seus objetos Git foram auditados. O histórico continha somente o README e não foram encontrados JSON real, backup, `.env` privado ou script de migração. O remoto configurado não foi alterado nem recebeu push nesta etapa.
+
+## Integração real preparada
+
+- Frontend: `https://simulador-parcelas.wasxtech.com.br`.
+- Diretório informado: `/home/u587444950/domains/wasxtech.com.br/public_html/simulador-parcelas`.
+- Artefato para envio: `deploy/hostinger/`, gerado de `frontend/` por `scripts/gerar-deploy-hostinger.ps1`.
+- Backend: Vercel Function em `api/index.py`, publicada em `https://simulador-parcelas-objetivos.vercel.app`.
+- CORS de produção: somente a origem exata do subdomínio acima.
+
+O DNS do subdomínio foi resolvido em 31/10/2026. O caminho interno da Hostinger não pode ser confirmado por DNS; confira o diretório raiz no painel antes da publicação.
+
+## CI/CD preparado
+
+- `.github/workflows/ci.yml`: valida PRs, pushes na `main` e execução manual.
+- `.github/workflows/deploy-hostinger.yml`: publica somente após CI aprovada para o mesmo SHA da `main` ou por execução manual protegida.
+- A Vercel mantém sua integração Git nativa; não foi criado deploy duplicado por CLI.
+- O CD Hostinger depende da confirmação de SSH com shell, dos Secrets e da variável documentados em `docs/CI-CD.md`.

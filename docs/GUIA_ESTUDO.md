@@ -1,5 +1,13 @@
 # Guia de estudo — leigo, técnico e prático
 
+## CI e CD
+
+**LEIGO:** CI confere automaticamente; CD entrega a versão que passou na conferência.
+
+**TÉCNICO:** GitHub Actions executa validações por evento e promove o SHA aprovado para um ambiente protegido, com permissões mínimas.
+
+**PRÁTICO:** leia `.github/workflows/ci.yml`, escolha um step e explique qual erro ele detecta. O guia completo está em `docs/CI-CD.md`.
+
 ## Serverless
 
 **LEIGO:** a Vercel liga uma pequena execução Python quando chega um pedido e cuida do servidor por nós.

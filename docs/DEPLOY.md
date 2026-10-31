@@ -1,77 +1,90 @@
-# Deploy manual — Vercel e Hostinger
+# Deploy manual — Hostinger + Vercel
 
-Nenhuma publicação foi executada nesta preparação. Substitua os exemplos pelos seus domínios reais.
+Nenhuma publicação ou alteração remota é feita automaticamente.
 
-## 1. Conferência de privacidade e GitHub
+## Arquitetura
 
-Inicialize o Git somente após revisar os arquivos:
-
-```powershell
-git init
-git status --short --ignored
-git check-ignore data\parcelas.json
-git check-ignore data\parcelas.json.backup-antes-dados-confirmados-2026-10-29-v1
-git check-ignore backend\migrar_dados_2026.py
-python -m unittest discover -s backend -p "test_*.py"
+```text
+Navegador
+  ├─ Hostinger: https://simulador-parcelas.wasxtech.com.br
+  │    └─ HTML, CSS, config.js e script.js
+  └─ Vercel: https://simulador-parcelas-objetivos.vercel.app
+       └─ API Python /api/health, /api/resumo e /api/parcelamentos
 ```
 
-Antes de cada commit, procure nomes, valores, chaves e tokens próprios. `.gitignore` impede novos arquivos, mas não apaga um segredo já commitado. Para repetir a auditoria do histórico, use:
+## 1. Publicar primeiro a API na Vercel
 
-```powershell
-git log --all --stat
-git log --all -p -- data
-git rev-list --objects --all
+1. Importe o repositório na Vercel usando a raiz do projeto.
+2. Confirme que `api/index.py` foi reconhecido como Python Function.
+3. Configure as variáveis:
+
+```text
+HOSTINGER_ALLOWED_ORIGIN=https://simulador-parcelas.wasxtech.com.br
+ALLOW_LOCALHOST_CORS=false
 ```
 
-Se encontrar dado privado no histórico, não torne o repositório público; revogue credenciais expostas e reescreva o histórico com uma ferramenta apropriada antes do push.
-
-## 2. Publicar a API na Vercel
-
-1. Crie um repositório privado no GitHub e envie-o somente depois da auditoria e autorização.
-2. Na Vercel, importe o repositório mantendo a raiz do projeto.
-3. Em **Environment Variables**, defina:
-   - `HOSTINGER_ALLOWED_ORIGIN=https://seudominio.com.br`
-   - `ALLOW_LOCALHOST_CORS=false`
-4. Faça o deploy e anote a URL real, por exemplo `https://seu-projeto.vercel.app`.
-5. Não envie `data/`, `.env`, backups ou a migração privada.
-
-Teste as URLs reais:
+4. A integração Git da Vercel já publica a API; não há segundo workflow de deploy Vercel.
+5. Teste a URL confirmada:
 
 ```powershell
-curl.exe -i https://seu-projeto.vercel.app/api/health
-curl.exe -i https://seu-projeto.vercel.app/api/resumo
-curl.exe -i https://seu-projeto.vercel.app/api/parcelamentos
-curl.exe -i -X POST https://seu-projeto.vercel.app/api/parcelamentos
-curl.exe -i -X OPTIONS https://seu-projeto.vercel.app/api/resumo -H "Origin: https://seudominio.com.br" -H "Access-Control-Request-Method: GET"
+curl.exe -i https://simulador-parcelas-objetivos.vercel.app/api/health
+curl.exe -i https://simulador-parcelas-objetivos.vercel.app/api/resumo
+curl.exe -i https://simulador-parcelas-objetivos.vercel.app/api/parcelamentos
+curl.exe -i -X POST https://simulador-parcelas-objetivos.vercel.app/api/parcelamentos
+curl.exe -i -X OPTIONS https://simulador-parcelas-objetivos.vercel.app/api/resumo -H "Origin: https://simulador-parcelas.wasxtech.com.br" -H "Access-Control-Request-Method: GET"
 ```
 
-Espere respectivamente JSON 200 nas três consultas, 405 no POST e 204 com `Access-Control-Allow-Origin` no OPTIONS.
+Resultados esperados: GET 200 com JSON, POST 405 e OPTIONS 204 com a origem autorizada.
 
-## 3. Publicar o frontend na Hostinger
+## 2. Gerar o frontend da Hostinger
 
-1. Edite `frontend/config.js` e troque `https://SEU-PROJETO.vercel.app` pela URL real.
-2. Envie somente o conteúdo de `frontend/` para `public_html` (ou para a pasta do domínio): `index.html`, `style.css`, `config.js` e `script.js`.
-3. Abra o domínio por HTTPS e confira o painel responsivo no navegador e no celular.
-4. No DevTools, aba Network, confirme que `/api/resumo` vai para a Vercel e retorna JSON 200.
+`frontend/config.js` já contém a URL real:
 
-A URL da API não é segredo. Senhas, tokens e chaves jamais podem aparecer em `config.js`.
+```javascript
+apiBaseUrl: ambienteLocal ? 'http://127.0.0.1:8000' : 'https://simulador-parcelas-objetivos.vercel.app'
+```
 
-## 4. Desenvolvimento local
-
-Para a aplicação privada existente:
+Depois gere o artefato:
 
 ```powershell
-python backend\main.py
+powershell -NoProfile -ExecutionPolicy Bypass -File scripts\gerar-deploy-hostinger.ps1
 ```
 
-Para testar especificamente a função pública, use os testes automatizados. Ao usar Vercel localmente, defina `ALLOW_LOCALHOST_CORS=true` apenas no ambiente de desenvolvimento e volte para `false` em produção.
+`deploy/hostinger/` conterá exclusivamente:
 
-## 5. Diagnóstico rápido
+- `index.html`
+- `style.css`
+- `config.js`
+- `script.js`
 
-- **Erro de CORS:** confirme que `HOSTINGER_ALLOWED_ORIGIN` contém protocolo e domínio exatos, sem barra final, e refaça o deploy da API.
-- **HTML no lugar de JSON:** confirme a URL em `config.js` e as regras de rewrite de `vercel.json`.
-- **404 na API:** teste primeiro `/api/health` na URL real da Vercel.
-- **Frontend sem estilo:** envie os quatro arquivos juntos; os caminhos são relativos para funcionar também em subpastas.
-- **Mudanças não salvas:** esperado; a versão pública é somente leitura.
+Não edite a cópia gerada como fonte principal; altere `frontend/` e gere novamente.
 
-Deploy só está concluído quando as URLs reais da Vercel e da Hostinger forem verificadas. Este documento não substitui essa validação.
+## 3. Confirmar o diretório Hostinger
+
+Domínio: `https://simulador-parcelas.wasxtech.com.br`
+
+Diretório informado: `/home/u587444950/domains/wasxtech.com.br/public_html/simulador-parcelas`
+
+O DNS do subdomínio resolve, mas DNS não comprova o diretório interno. No hPanel, abra **Domínios → Subdomínios** e confirme que o “diretório raiz/document root” é exatamente o caminho informado. Por SSH, uma alternativa é conferir o caminho e os arquivos sem mover ou apagar nada.
+
+Somente depois dessa confirmação, envie o conteúdo de `deploy/hostinger/` para o diretório — não envie a pasta `deploy/hostinger` como uma subpasta adicional.
+
+## 4. Verificação final
+
+1. Abra `https://simulador-parcelas.wasxtech.com.br`.
+2. Confirme HTTPS, estilo e responsividade.
+3. No DevTools → Network, confirme que `/api/resumo` vai para a URL Vercel e retorna JSON 200.
+4. Confirme que nenhuma chamada POST, PUT ou DELETE é feita.
+5. Teste uma rota inexistente e confirme JSON 404 na API.
+
+## Decisões
+
+**LEIGO:** a Vercel precisa ser publicada primeiro para descobrirmos seu endereço. Depois colocamos esse endereço no frontend e enviamos somente quatro arquivos para a Hostinger.
+
+**TÉCNICO:** a API base não é inferida nem inventada. O artefato estático é reproduzível, usa caminhos relativos e consome uma origem distinta protegida por allowlist CORS exata.
+
+**LEIGO:** o arquivo de dados real fica somente no computador.
+
+**TÉCNICO:** `.gitignore`, `.vercelignore`, API demonstrativa imutável e testes do artefato impedem a inclusão acidental de persistência local e dados privados.
+
+Para CI/CD, Secrets, proteção da `main` e rollback, consulte `docs/CI-CD.md`.
