@@ -39,7 +39,7 @@ O DNS do subdomínio foi resolvido em 31/10/2026. O caminho interno da Hostinger
 - `.github/workflows/ci.yml`: valida PRs, pushes na `main` e execução manual.
 - `.github/workflows/deploy-hostinger.yml`: atualiza `hostinger-pages` somente após CI aprovada para o mesmo SHA da `main` ou por execução manual protegida.
 - A Vercel mantém sua integração Git nativa; não foi criado deploy duplicado por CLI.
-- A Hostinger deve acompanhar `hostinger-pages` pelo Git nativo do hPanel e pelo webhook real fornecido em Auto Deployment.
+- A Hostinger deve acompanhar `hostinger-pages` pelo Git nativo do hPanel e pelo webhook real já cadastrado manualmente no GitHub.
 
 ## Falha do Deploy Hostinger #2
 
@@ -51,4 +51,4 @@ O workflow agora informa nominalmente cada configuração ausente, sem mostrar v
 
 O workflow SSH foi substituído pela publicação incremental da branch `hostinger-pages`. O novo CD exige somente `HOSTINGER_PAGES_TOKEN`, restrito ao repositório e com `Contents: read/write`. A branch contém apenas `index.html`, `style.css` e `script.js` na raiz e não usa force push.
 
-A ativação ainda depende do hPanel: repositório, branch, destino inicialmente vazio e webhook. Nenhum webhook foi criado remotamente e nenhuma URL foi registrada no repositório.
+A falha atual ocorre antes do push: `HOSTINGER_PAGES_TOKEN` ainda precisa existir como Secret do Environment `production-hostinger`. Sem ele, a branch não é atualizada e o webhook já cadastrado não recebe um novo evento. A ativação também depende de o hPanel estar apontando para `hostinger-pages` e para a raiz confirmada do subdomínio. Nenhuma URL de webhook foi criada, substituída ou registrada no repositório por esta preparação.

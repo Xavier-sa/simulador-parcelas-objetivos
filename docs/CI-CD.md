@@ -43,19 +43,22 @@ Para repositório público, use HTTPS. Para repositório privado, o hPanel pode 
 
 ## Webhook
 
-Ao clicar **Auto Deployment**, o hPanel fornece a URL real. Não registre essa URL em código ou documentação.
+O webhook fornecido pelo hPanel já foi cadastrado manualmente no GitHub. Não crie outro, não substitua sua URL e não a registre em código ou documentação.
 
-No GitHub, use **Settings → Webhooks → Add webhook**:
+Em **Settings → Webhooks**, apenas confirme no cadastro existente:
 
-- Payload URL: URL fornecida pelo hPanel.
 - Content type: `application/json`.
 - SSL verification: habilitado.
-- Evento: somente `push`.
+- Evento: `push`.
 - Active: habilitado.
 
-Configure Secret de assinatura somente se o receptor Hostinger oferecer suporte e exigir o mesmo segredo. Não invente um receptor nem uma URL.
+Não é necessário guardar a URL do webhook em Secret: o GitHub entrega o evento do repositório diretamente ao receptor já cadastrado.
 
 O webhook recebe pushes de outras branches; a integração Hostinger deve permanecer selecionada em `hostinger-pages`. No primeiro teste, confira **Recent Deliveries** e o log do hPanel para confirmar a filtragem e evitar implantação duplicada.
+
+### Por que manter o PAT
+
+Foram avaliadas duas alternativas. O `GITHUB_TOKEN` é mais simples, mas eventos gerados por ele possuem supressões contra automações recursivas. Como o fluxo depende de um evento `push` normal chegando a um webhook externo já cadastrado, foi mantido o PAT dedicado, com acesso apenas a este repositório e permissão **Contents: Read and write**. Não há endpoint oficial separado da Hostinger sendo chamado pelo workflow.
 
 ## Verificação e rollback
 

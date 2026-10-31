@@ -23,9 +23,14 @@ class TestePipeline(unittest.TestCase):
 
     def test_cd_exige_somente_token_da_branch_publica(self):
         self.assertIn('HOSTINGER_PAGES_TOKEN', self.cd)
+        self.assertIn(
+            'HOSTINGER_PAGES_TOKEN não configurado no ambiente production-hostinger',
+            self.cd,
+        )
         for antigo in ('HOSTINGER_HOST', 'HOSTINGER_PORT', 'HOSTINGER_USER',
                        'HOSTINGER_SSH_KEY', 'HOSTINGER_KNOWN_HOSTS',
-                       'HOSTINGER_DEPLOY_PATH', 'ssh ', 'scp '):
+                       'HOSTINGER_DEPLOY_PATH', 'HOSTINGER_WEBHOOK',
+                       'ssh ', 'scp '):
             self.assertNotIn(antigo, self.cd)
 
     def test_cd_atualiza_branch_sem_force_e_verifica_sha_publicado(self):

@@ -95,9 +95,9 @@ Para CI/CD, Secrets, proteção da `main` e rollback, consulte `docs/CI-CD.md`.
 1. Cadastre `HOSTINGER_PAGES_TOKEN` no ambiente `production-hostinger`.
 2. Após o primeiro push autorizado, confirme que `hostinger-pages` contém apenas os três arquivos.
 3. No hPanel, configure Git para o repositório e branch `hostinger-pages`, confirmando a raiz do subdomínio.
-4. Ative Auto Deployment e copie a URL real para um webhook GitHub de evento `push`.
-5. Faça o deploy inicial pelo botão do hPanel e confira o domínio.
-6. Nas atualizações seguintes, acompanhe **Actions → CI** e depois **Publicar branch Hostinger**.
+4. Em GitHub **Settings → Webhooks**, confirme que o webhook já cadastrado está ativo para o evento `push`; não crie outro nem altere sua URL.
+5. No hPanel, confirme que Auto Deployment usa a mesma integração e faça o deploy inicial se o painel exigir.
+6. Nas atualizações seguintes, acompanhe **Actions → CI**, **Publicar branch Hostinger**, **Recent Deliveries** do webhook e o histórico no hPanel.
 
 Se o ambiente exigir revisores, o processo pausa antes de liberar os Secrets. Isso preserva a segurança, mas significa que o deploy não é totalmente automático até uma pessoa aprovar.
 

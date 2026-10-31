@@ -1,5 +1,13 @@
 # Histórico de alterações
 
+## 31/10/2026 — finalização do fluxo por webhook
+
+- Diagnosticada a falha atual como ausência de `HOSTINGER_PAGES_TOKEN` no Environment `production-hostinger`, antes de qualquer push.
+- Mantido o PAT dedicado para que a atualização de `hostinger-pages` produza um evento de push normal para o webhook externo.
+- Registrado que o webhook Hostinger já foi cadastrado manualmente e não deve ser duplicado ou substituído.
+- Reforçados os testes para rejeitar configuração de uma segunda URL de webhook no workflow.
+- API Python, regras financeiras e configuração Vercel preservadas.
+
 ## 31/10/2026 — migração do CD para Git/Webhook Hostinger
 
 - Removidos SSH, SCP, cinco Secrets SSH e variável de caminho do workflow ativo.
