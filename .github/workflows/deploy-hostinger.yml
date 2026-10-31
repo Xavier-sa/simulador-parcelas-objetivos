@@ -1,7 +1,7 @@
-name: Deploy Hostinger
+name: Publicar branch Hostinger
 
 on:
-  # Só recebe commits da main depois que o workflow CI terminou.
+  # A publicação só começa depois que a CI da main termina.
   workflow_run:
     workflows: [CI]
     types: [completed]
@@ -16,14 +16,13 @@ on:
 permissions:
   contents: read
 
-# Nunca deixa duas publicações escreverem simultaneamente no mesmo destino.
 concurrency:
-  group: hostinger-production
+  group: hostinger-pages
   cancel-in-progress: false
 
 jobs:
   publicar:
-    name: Publicar frontend aprovado
+    name: Atualizar hostinger-pages
     if: >-
       github.event_name == 'workflow_dispatch' ||
       (github.event.workflow_run.conclusion == 'success' &&
@@ -36,23 +35,28 @@ jobs:
       url: https://simulador-parcelas.wasxtech.com.br
     env:
       DEPLOY_SHA: ${{ github.event_name == 'workflow_run' && github.event.workflow_run.head_sha || inputs.commit_sha }}
-      HOSTINGER_HOST: ${{ secrets.HOSTINGER_HOST }}
-      HOSTINGER_PORT: ${{ secrets.HOSTINGER_PORT }}
-      HOSTINGER_USER: ${{ secrets.HOSTINGER_USER }}
-      HOSTINGER_SSH_KEY: ${{ secrets.HOSTINGER_SSH_KEY }}
-      HOSTINGER_KNOWN_HOSTS: ${{ secrets.HOSTINGER_KNOWN_HOSTS }}
-      REMOTE_PATH: ${{ vars.HOSTINGER_DEPLOY_PATH }}
 
     steps:
-      # O ref é o SHA aprovado pela CI, não o HEAD mais recente da branch.
+      - name: Validar token de publicação
+        shell: bash
+        env:
+          PAGES_TOKEN: ${{ secrets.HOSTINGER_PAGES_TOKEN }}
+        run: |
+          if [[ -z "$PAGES_TOKEN" ]]; then
+            echo '::error::Erro: HOSTINGER_PAGES_TOKEN não configurado no ambiente production-hostinger.'
+            exit 1
+          fi
+
+      # PAT dedicado: o push precisa gerar o evento que alimenta o webhook externo.
       - name: Baixar o commit aprovado
         uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1, Node.js 24
         with:
           ref: ${{ env.DEPLOY_SHA }}
           fetch-depth: 0
-          persist-credentials: false
+          token: ${{ secrets.HOSTINGER_PAGES_TOKEN }}
+          persist-credentials: true
 
-      - name: Confirmar SHA e vínculo com main
+      - name: Validar SHA e vínculo com main
         shell: bash
         run: |
           set -euo pipefail
@@ -60,102 +64,66 @@ jobs:
           git show-ref --verify --quiet refs/remotes/origin/main
           git merge-base --is-ancestor "$DEPLOY_SHA" origin/main
 
-      - name: Preparar somente arquivos públicos
+      - name: Preparar raiz estática isolada
         shell: bash
         run: |
           set -euo pipefail
-          mkdir _publicacao
-          cp frontend/index.html frontend/style.css frontend/script.js _publicacao/
-          test "$(find _publicacao -maxdepth 1 -type f | wc -l)" -eq 3
-          grep -Fq 'https://simulador-parcelas-objetivos.vercel.app' _publicacao/script.js
+          PUBLIC_DIR="$RUNNER_TEMP/hostinger-pages"
+          mkdir -p "$PUBLIC_DIR"
+          cp frontend/index.html frontend/style.css frontend/script.js "$PUBLIC_DIR/"
           python scripts/validar_publicacao.py
+          python - "$PUBLIC_DIR/index.html" "$DEPLOY_SHA" <<'PYTHON'
+          from pathlib import Path
+          import sys
+          caminho = Path(sys.argv[1])
+          sha = sys.argv[2]
+          html = caminho.read_text(encoding='utf-8')
+          marca = f'  <meta name="deployment-commit" content="{sha}">\n'
+          if '</head>' not in html:
+              raise SystemExit('index.html sem fechamento </head>.')
+          caminho.write_text(html.replace('</head>', marca + '</head>', 1), encoding='utf-8')
+          PYTHON
+          test "$(find "$PUBLIC_DIR" -maxdepth 1 -type f | wc -l)" -eq 3
+          test -f "$PUBLIC_DIR/index.html"
+          test -f "$PUBLIC_DIR/style.css"
+          test -f "$PUBLIC_DIR/script.js"
 
-      - name: Validar configuração SSH
-        env:
-          HOSTINGER_DEPLOY_PATH: ${{ vars.HOSTINGER_DEPLOY_PATH }}
-        run: python scripts/validar_config_hostinger.py
-
-      - name: Instalar chave e host conhecido
+      - name: Criar commit público e atualizar branch
+        id: branch
         shell: bash
         run: |
           set -euo pipefail
-          install -d -m 700 ~/.ssh
-          printf '%s\n' "$HOSTINGER_SSH_KEY" > ~/.ssh/hostinger_key
-          printf '%s\n' "$HOSTINGER_KNOWN_HOSTS" > ~/.ssh/known_hosts
-          chmod 600 ~/.ssh/hostinger_key ~/.ssh/known_hosts
+          PUBLIC_DIR="$RUNNER_TEMP/hostinger-pages"
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          if git ls-remote --exit-code --heads origin refs/heads/hostinger-pages >/dev/null 2>&1; then
+            git fetch --no-tags origin hostinger-pages
+            git switch -C hostinger-pages origin/hostinger-pages
+          else
+            git switch --orphan hostinger-pages
+          fi
+          git rm -r -f --ignore-unmatch .
+          cp "$PUBLIC_DIR/index.html" "$PUBLIC_DIR/style.css" "$PUBLIC_DIR/script.js" .
+          test "$(find . -maxdepth 1 -type f | wc -l)" -eq 3
+          git add index.html style.css script.js
+          git commit -m "publish: frontend de $DEPLOY_SHA"
+          git push origin HEAD:hostinger-pages
+          echo "public_commit=$(git rev-parse HEAD)" >> "$GITHUB_OUTPUT"
 
-      - name: Enviar para diretório temporário
-        shell: bash
-        run: |
-          set -euo pipefail
-          TEMP_PATH="$REMOTE_PATH/.incoming-$DEPLOY_SHA"
-          SSH_ARGS=(-i ~/.ssh/hostinger_key -p "$HOSTINGER_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes)
-          ssh "${SSH_ARGS[@]}" "$HOSTINGER_USER@$HOSTINGER_HOST" "mkdir -p -- '$TEMP_PATH'"
-          scp -i ~/.ssh/hostinger_key -P "$HOSTINGER_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes \
-            _publicacao/index.html _publicacao/style.css _publicacao/script.js \
-            "$HOSTINGER_USER@$HOSTINGER_HOST:$TEMP_PATH/"
-
-      - name: Ativar somente os três arquivos
-        id: ativacao
-        shell: bash
-        run: |
-          set -euo pipefail
-          SSH_ARGS=(-i ~/.ssh/hostinger_key -p "$HOSTINGER_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes)
-          ssh "${SSH_ARGS[@]}" "$HOSTINGER_USER@$HOSTINGER_HOST" sh -s -- "$REMOTE_PATH" "$DEPLOY_SHA" <<'REMOTE_SCRIPT'
-          set -eu
-          target=$1
-          sha=$2
-          incoming="$target/.incoming-$sha"
-          rollback="$target/.rollback-$sha"
-          files='index.html style.css script.js'
-          mkdir -p -- "$rollback"
-          for file in $files; do
-            test -f "$incoming/$file"
-            if test -f "$target/$file"; then
-              cp -p -- "$target/$file" "$rollback/$file"
-            fi
-          done
-          for file in $files; do
-            mv -f -- "$incoming/$file" "$target/$file"
-            test -f "$target/$file"
-          done
-          rmdir -- "$incoming"
-          REMOTE_SCRIPT
-
-      - name: Verificar site publicado
-        id: verificacao
+      # O hPanel recebe o push por webhook; a marca confirma o SHA realmente servido.
+      - name: Verificar publicação da Hostinger
         shell: bash
         run: |
           set -euo pipefail
           SITE='https://simulador-parcelas.wasxtech.com.br'
-          curl --fail --silent --show-error --location --max-time 20 \
-            --retry 5 --retry-delay 5 --retry-all-errors \
-            "$SITE/?sha=$DEPLOY_SHA" -o pagina.html
-          grep -Fq '<title>Objetivos' pagina.html
-          curl --fail --silent --show-error --location --max-time 20 \
-            --retry 5 --retry-delay 5 --retry-all-errors \
-            "$SITE/script.js?sha=$DEPLOY_SHA" -o publicado.js
-          grep -Fq 'https://simulador-parcelas-objetivos.vercel.app' publicado.js
-
-      # Se a ativação terminou mas a verificação pública falhou, restaura a cópia anterior.
-      - name: Restaurar versão anterior após falha de verificação
-        if: failure() && steps.ativacao.outcome == 'success'
-        shell: bash
-        run: |
-          set -euo pipefail
-          SSH_ARGS=(-i ~/.ssh/hostinger_key -p "$HOSTINGER_PORT" -o BatchMode=yes -o StrictHostKeyChecking=yes)
-          ssh "${SSH_ARGS[@]}" "$HOSTINGER_USER@$HOSTINGER_HOST" sh -s -- "$REMOTE_PATH" "$DEPLOY_SHA" <<'REMOTE_SCRIPT'
-          set -eu
-          target=$1
-          sha=$2
-          rollback="$target/.rollback-$sha"
-          files='index.html style.css script.js'
-          restaurados=0
-          for file in $files; do
-            if test -f "$rollback/$file"; then
-              cp -p -- "$rollback/$file" "$target/$file"
-              restaurados=$((restaurados + 1))
+          for tentativa in $(seq 1 18); do
+            if curl --fail --silent --show-error --location --max-time 20 \
+              "$SITE/?sha=$DEPLOY_SHA&tentativa=$tentativa" -o pagina.html && \
+              grep -Fq "deployment-commit\" content=\"$DEPLOY_SHA" pagina.html; then
+              echo "Hostinger publicou o SHA $DEPLOY_SHA."
+              exit 0
             fi
+            sleep 10
           done
-          test "$restaurados" -eq 3
-          REMOTE_SCRIPT
+          echo '::error::A branch foi atualizada, mas o SHA não apareceu no domínio dentro do prazo.'
+          exit 1

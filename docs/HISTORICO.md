@@ -1,5 +1,16 @@
 # Histórico de alterações
 
+## 31/10/2026 — migração do CD para Git/Webhook Hostinger
+
+- Removidos SSH, SCP, cinco Secrets SSH e variável de caminho do workflow ativo.
+- Adicionada publicação incremental de `hostinger-pages` após CI verde da `main`.
+- Adotado PAT fine-grained `HOSTINGER_PAGES_TOKEN` para gerar o push consumido pelo webhook.
+- Limitada a branch pública a três arquivos estáticos na raiz.
+- Adicionada marca do SHA aprovado ao HTML e verificação do domínio.
+- Preservado rollback por SHA anterior, sem force push.
+- Documentada configuração Git/webhook sem inventar URL.
+- API Python e Vercel preservadas.
+
 ## 31/10/2026 — diagnóstico definitivo do CD Hostinger
 
 - Confirmada a falha do run `41175833129` por Secrets e variável ausentes no ambiente `production-hostinger`.

@@ -66,7 +66,7 @@ Domínio: `https://simulador-parcelas.wasxtech.com.br`
 
 Diretório informado: `/home/u587444950/domains/wasxtech.com.br/public_html/simulador-parcelas`
 
-O DNS do subdomínio resolve, mas DNS não comprova o diretório interno. No hPanel, abra **Domínios → Subdomínios** e confirme que o “diretório raiz/document root” é exatamente o caminho informado. Por SSH, uma alternativa é conferir o caminho e os arquivos sem mover ou apagar nada.
+O DNS do subdomínio resolve, mas DNS não comprova o diretório interno. No hPanel, abra **Domínios → Subdomínios** e confirme que o “diretório raiz/document root” é exatamente o caminho informado.
 
 Somente depois dessa confirmação, extraia `deploy/simulador-parcelas-hostinger.zip` diretamente em `/home/u587444950/domains/wasxtech.com.br/public_html/simulador-parcelas`. O resultado precisa ser `.../simulador-parcelas/index.html`, não `.../simulador-parcelas/hostinger/index.html` nem outra subpasta.
 
@@ -92,13 +92,13 @@ Para CI/CD, Secrets, proteção da `main` e rollback, consulte `docs/CI-CD.md`.
 
 ## Primeiro deploy automático
 
-1. Confirme no hPanel que SSH por chave e shell estão habilitados para o plano.
-2. Cadastre os cinco Secrets e `HOSTINGER_DEPLOY_PATH` no ambiente `production-hostinger`.
-3. Proteja o ambiente com revisores, se desejar aprovação antes da produção.
-4. Após autorização, envie o commit para `main` ou faça merge de um PR aprovado.
-5. Acompanhe **Actions → CI**; somente depois do verde abrirá **Deploy Hostinger**.
-6. O deploy deve passar por validação, upload temporário, ativação e verificação pública.
+1. Cadastre `HOSTINGER_PAGES_TOKEN` no ambiente `production-hostinger`.
+2. Após o primeiro push autorizado, confirme que `hostinger-pages` contém apenas os três arquivos.
+3. No hPanel, configure Git para o repositório e branch `hostinger-pages`, confirmando a raiz do subdomínio.
+4. Ative Auto Deployment e copie a URL real para um webhook GitHub de evento `push`.
+5. Faça o deploy inicial pelo botão do hPanel e confira o domínio.
+6. Nas atualizações seguintes, acompanhe **Actions → CI** e depois **Publicar branch Hostinger**.
 
 Se o ambiente exigir revisores, o processo pausa antes de liberar os Secrets. Isso preserva a segurança, mas significa que o deploy não é totalmente automático até uma pessoa aprovar.
 
-Para confirmar a publicação, abra os logs do step **Verificar site publicado** e depois acesse `https://simulador-parcelas.wasxtech.com.br`. Em caso de falha após ativação, confira também o step de restauração.
+Para confirmar a publicação, abra os logs do step **Verificar publicação da Hostinger** e confira a entrega do webhook e o último deploy no hPanel.

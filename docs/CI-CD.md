@@ -1,127 +1,70 @@
-# CI/CD — GitHub Actions, Vercel e Hostinger
+# CI/CD — GitHub Actions e Git nativo da Hostinger
 
-## Visão rápida
+## Fluxo escolhido
 
-**LEIGO:** CI é a conferência automática do trabalho. CD é a entrega automática depois que a conferência passa.
-
-**TÉCNICO:** Continuous Integration executa validações reproduzíveis em pushes e pull requests. Continuous Delivery promove um SHA aprovado para um ambiente protegido.
-
-**PRÁTICO:** abra a aba **Actions**, escolha CI, execute manualmente e acompanhe cada etapa.
-
-## Workflows, jobs e steps
-
-**LEIGO:** workflow é a receita; job é uma parte da receita; step é uma ação pequena dessa parte.
-
-**TÉCNICO:** arquivos YAML em `.github/workflows/` definem eventos, permissões, jobs, runners e steps. O projeto possui `ci.yml` e `deploy-hostinger.yml`.
-
-**PRÁTICO:** encontre no `ci.yml` o job `validar` e conte quantos steps ele executa.
-
-## Gatilhos
-
-**LEIGO:** push executa quando algo chega à `main`; pull request confere antes da união; manual permite iniciar pela interface.
-
-**TÉCNICO:** CI usa `push`, `pull_request` e `workflow_dispatch`. O CD usa `workflow_run` e só aceita conclusão bem-sucedida de um push na `main`; PR nunca publica.
-
-**PRÁTICO:** abra um PR com uma alteração apenas na documentação e confirme que CI executa, mas Deploy Hostinger não publica.
-
-## O que a CI verifica
-
-1. Checkout do SHA do evento.
-2. Python 3.12 fixo.
-3. Sintaxe Python.
-4. Regressão financeira histórica isolada.
-5. Todos os testes `unittest`.
-6. Sintaxe JavaScript com `node --check`, sem executar a aplicação.
-7. Arquivos essenciais, `vercel.json`, dados demonstrativos e privacidade.
-
-Para testar uma reprovação com segurança, crie uma branch temporária, altere um valor esperado em um teste, abra um PR e depois reverta a alteração. Para JavaScript, introduza temporariamente um parêntese sem fechamento. Nunca faça esses experimentos diretamente na `main`.
-
-## Secrets e variável
-
-Em **GitHub → Settings → Secrets and variables → Actions**, cadastre no ambiente `production-hostinger`:
-
-- Secret `HOSTINGER_HOST`: host SSH/SFTP confirmado no hPanel.
-- Secret `HOSTINGER_PORT`: porta confirmada no hPanel.
-- Secret `HOSTINGER_USER`: usuário com acesso apenas ao necessário.
-- Secret `HOSTINGER_SSH_KEY`: chave privada dedicada ao deploy.
-- Secret `HOSTINGER_KNOWN_HOSTS`: linha do host obtida e conferida por canal confiável; para porta não padrão, use o formato `[host]:porta` fornecido pelo `ssh-keyscan` e compare a impressão digital no hPanel.
-- Variable `HOSTINGER_DEPLOY_PATH`: `/home/u587444950/domains/wasxtech.com.br/public_html/simulador-parcelas`.
-
-Nunca copie valores desses Secrets para arquivos do repositório. Configure proteção do ambiente com revisores obrigatórios, se o plano permitir.
-
-### Causa da falha observada
-
-No run `41175833129`, os cinco Secrets e a variável chegaram vazios. O workflow estava associado ao ambiente correto e bloqueou antes do upload. Portanto, a causa principal é configuração manual ausente, não falha do frontend, do SHA ou da API. O YAML foi melhorado para listar apenas os nomes ausentes.
-
-### Preparar uma chave exclusiva
-
-**LEIGO:** a chave pública é o cadeado colocado na Hostinger; a chave privada é a única chave que abre esse cadeado e fica protegida no GitHub.
-
-**TÉCNICO:** use um par Ed25519 dedicado, sem reutilizar sua chave pessoal. A private key vira Secret; somente a public key é autorizada no servidor.
-
-No PowerShell local:
-
-```powershell
-ssh-keygen -t ed25519 -a 100 -C "github-actions-simulador-parcelas" -f "$env:USERPROFILE\.ssh\hostinger_deploy_simulador"
+```text
+push main → CI aprovada → hostinger-pages atualizada → webhook → Hostinger publica
 ```
 
-Para automação não interativa, a chave precisa estar utilizável pelo runner sem prompt. Proteja esse risco restringindo a chave à conta de hospedagem, usando ambiente protegido e removendo-a no hPanel quando não for mais necessária.
+**LEIGO:** depois dos testes, o GitHub monta uma branch que contém somente o site. A Hostinger observa essa branch e copia os arquivos para o subdomínio.
 
-### Autorizar e identificar a conexão
+**TÉCNICO:** `workflow_run` consome o SHA aprovado da `main`, cria um commit incremental em `hostinger-pages` e faz push autenticado por PAT. O Git deploy do hPanel acompanha essa branch e recebe eventos pelo webhook fornecido pela própria Hostinger.
 
-1. No hPanel, abra **Websites → Dashboard → SSH Access** e habilite SSH.
-2. Copie de lá o host/IP, porta e usuário reais.
-3. Em **Add SSH key**, cole todo o conteúdo de `hostinger_deploy_simulador.pub`.
-4. Cadastre o conteúdo do arquivo privado `hostinger_deploy_simulador` como `HOSTINGER_SSH_KEY` no ambiente GitHub.
-5. Não presuma porta ou usuário. A porta frequente da Hostinger é 65002, mas vale a informação exibida na conta.
+**PRÁTICO:** compare `main` e `hostinger-pages` no GitHub e identifique por que apenas a segunda pode ser publicada como frontend estático.
 
-SSH por chave está disponível nos planos compatíveis da Hostinger; planos Single ou modo Website Builder podem não oferecer shell. Se houver apenas SFTP, o workflow atual, que usa comandos remotos seguros para ativação e rollback, não é compatível. Nesse caso, mantenha o CD bloqueado e publique o ZIP pelo hPanel/SFTP até escolher uma automação específica para SFTP.
+## CI e branch pública
 
-### Known hosts e teste sem expor segredo
+A CI executa em PR, push na `main` e manualmente. PR nunca publica: o CD exige uma CI bem-sucedida cujo evento original seja `push` na `main`.
 
-Obtenha a chave apresentada pelo servidor usando os valores reais:
+`hostinger-pages` contém diretamente na raiz apenas `index.html`, `style.css` e `script.js`. O workflow não usa force push, preservando o histórico. O HTML recebe uma meta `deployment-commit` com o SHA aprovado para verificação posterior.
 
-```powershell
-ssh-keyscan -p <PORTA> <HOST> | Set-Content -Encoding ascii hostinger_known_hosts
-ssh-keygen -lf hostinger_known_hosts
-```
+## Autenticação do push
 
-Compare a impressão digital com a exibida no hPanel ou confirmada pelo suporte Hostinger. Só depois cadastre o conteúdo de `hostinger_known_hosts` como `HOSTINGER_KNOWN_HOSTS`.
+Crie um fine-grained Personal Access Token dedicado:
 
-Teste localmente sem imprimir a chave:
+1. GitHub → Settings pessoais → Developer settings → Personal access tokens → Fine-grained tokens.
+2. Restrinja a `Xavier-sa/simulador-parcelas-objetivos`.
+3. Conceda somente **Contents: Read and write**.
+4. Defina expiração e rotação.
+5. Em **Settings → Environments → production-hostinger**, cadastre o Environment Secret `HOSTINGER_PAGES_TOKEN`.
 
-```powershell
-ssh -i "$env:USERPROFILE\.ssh\hostinger_deploy_simulador" -p <PORTA> -o BatchMode=yes -o StrictHostKeyChecking=yes -o UserKnownHostsFile=hostinger_known_hosts <USUARIO>@<HOST> "pwd; test -d '/home/u587444950/domains/wasxtech.com.br/public_html/simulador-parcelas'; test -w '/home/u587444950/domains/wasxtech.com.br/public_html/simulador-parcelas'"
-```
+O PAT é usado porque o push automatizado precisa produzir o evento consumido pelo webhook externo. O `GITHUB_TOKEN` possui supressões para evitar recursão. Nenhum token aparece no YAML, branch pública ou logs.
 
-**PRÁTICO:** execute primeiro apenas `pwd` e compare o diretório retornado com o caminho informado, sem criar, mover ou apagar arquivos.
+## Configurar Git no hPanel
 
-## Vercel versus Hostinger
+1. Confirme que o plano oferece **Git** em **Sites → Gerenciar → Git**.
+2. Selecione o repositório correto e a branch `hostinger-pages`.
+3. Confirme visualmente que o destino é a raiz de `simulador-parcelas.wasxtech.com.br`.
+4. O diretório deve estar vazio na primeira associação Git; faça backup antes de mover os arquivos atuais.
+5. Se o Git estiver no contexto do próprio subdomínio e o hPanel mostrar a raiz correta, deixe Install Path vazio. Em outro contexto, não adivinhe o caminho: confirme no painel ou suporte.
+6. Faça um deploy manual inicial somente depois que a branch existir.
 
-**LEIGO:** a Vercel observa o GitHub por conta própria. A Hostinger recebe os três arquivos públicos pelo nosso workflow.
+Para repositório público, use HTTPS. Para repositório privado, o hPanel pode fornecer uma chave de deploy de leitura para GitHub. Essa chave é Hostinger→GitHub e não reintroduz SSH no GitHub Actions.
 
-**TÉCNICO:** o CI não bloqueia automaticamente a integração Git da Vercel. Configure proteção da `main` exigindo o check **Validar aplicação** antes do merge. Se disponível no plano Vercel, use Deployment Checks ou promoção manual para impedir produção antes da aprovação.
+## Webhook
 
-**PRÁTICO:** em **Settings → Branches → Branch protection**, exija pull request e o status check da CI para `main`.
+Ao clicar **Auto Deployment**, o hPanel fornece a URL real. Não registre essa URL em código ou documentação.
 
-## Segurança do deploy Hostinger
+No GitHub, use **Settings → Webhooks → Add webhook**:
 
-O CD baixa o SHA aprovado, confirma que ele pertence à `main`, prepara somente três arquivos, impede concorrência e exige host conhecido. O upload vai primeiro para `.incoming-<SHA>`. Antes da substituição, os três arquivos anteriores são copiados para `.rollback-<SHA>`.
+- Payload URL: URL fornecida pelo hPanel.
+- Content type: `application/json`.
+- SSL verification: habilitado.
+- Evento: somente `push`.
+- Active: habilitado.
 
-O workflow requer SSH com execução de comandos fixos. Se a conta tiver somente SFTP, não cadastre os Secrets para este workflow: gere o ZIP e extraia manualmente seus três arquivos pelo hPanel/SFTP.
+Configure Secret de assinatura somente se o receptor Hostinger oferecer suporte e exigir o mesmo segredo. Não invente um receptor nem uma URL.
 
-Depois da ativação, o workflow consulta o domínio com HTTPS e confere o título da página e a URL Vercel em `script.js`. Se essa etapa falhar, restaura os três arquivos guardados em `.rollback-<SHA>` e mantém o job reprovado para investigação.
+O webhook recebe pushes de outras branches; a integração Hostinger deve permanecer selecionada em `hostinger-pages`. No primeiro teste, confira **Recent Deliveries** e o log do hPanel para confirmar a filtragem e evitar implantação duplicada.
 
-## Rollback
+## Verificação e rollback
 
-**LEIGO:** rollback é voltar aos três arquivos que estavam no site antes de uma publicação.
+O workflow aguarda até três minutos e procura no domínio a marca do SHA aprovado. Se ela não aparecer, a branch foi atualizada, mas o deploy Hostinger não está comprovado.
 
-**TÉCNICO:** cada deploy preserva os arquivos anteriores em `.rollback-<SHA>`. Um operador com SSH pode copiá-los de volta após confirmar o SHA e o diretório. Outra opção é executar manualmente o workflow informando um SHA anterior que ainda pertença à `main`.
+Para rollback, execute manualmente o workflow com um SHA anterior ainda ancestral da `main`. Ele recompõe os três arquivos e cria um novo commit em `hostinger-pages`, sem reescrever o histórico.
 
-**PRÁTICO:** sem executar em produção, identifique no histórico Git o SHA que seria usado em um rollback e confira seus três arquivos com `git show`.
+**PRÁTICO:** localize um SHA anterior com `git log --oneline` e confira `git show <SHA>:frontend/index.html`, sem executar o deploy.
 
-## Como reconhecer falha
+## Mecanismo SSH anterior
 
-Na aba Actions, verde significa que todos os steps passaram; vermelho indica falha. Abra o job, localize o primeiro step vermelho e leia a mensagem. Não reexecute repetidamente um deploy sem entender a causa.
-
-Quando um Secret estiver ausente, o log agora mostra, por exemplo, `Erro: HOSTINGER_HOST não configurado no ambiente production-hostinger.` O conteúdo do Secret nunca é impresso.
+Os commits anteriores preservam o desenho SSH para auditoria. Ele foi removido do workflow ativo. O novo fluxo não usa host, porta, usuário, chave SSH, known_hosts ou caminho remoto no GitHub Actions.
