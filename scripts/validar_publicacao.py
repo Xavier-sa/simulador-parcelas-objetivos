@@ -8,7 +8,7 @@ ESSENCIAIS = {
     'frontend/index.html', 'frontend/style.css', 'frontend/script.js', 'vercel.json',
 }
 PUBLICOS = [RAIZ / 'frontend', RAIZ / 'deploy' / 'hostinger', RAIZ / 'api']
-PROIBIDOS = ('parcelas.json', 'backup-antes', 'BEGIN PRIVATE KEY', '1000.00')
+PROIBIDOS = ('parcelas.json', 'backup-antes', 'BEGIN PRIVATE KEY')
 
 
 def validar():

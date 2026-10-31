@@ -81,6 +81,9 @@ jobs:
           marca = f'  <meta name="deployment-commit" content="{sha}">\n'
           if '</head>' not in html:
               raise SystemExit('index.html sem fechamento </head>.')
+          if '__DEPLOY_SHA__' not in html:
+              raise SystemExit('index.html sem marcador visível de versão.')
+          html = html.replace('__DEPLOY_SHA__', sha)
           caminho.write_text(html.replace('</head>', marca + '</head>', 1), encoding='utf-8')
           PYTHON
           test "$(find "$PUBLIC_DIR" -maxdepth 1 -type f | wc -l)" -eq 3

@@ -38,6 +38,7 @@ class TesteDeployHostinger(unittest.TestCase):
             self.assertIn(f'"{caminho}"', html)
         self.assertNotIn('href="/', html)
         self.assertNotIn('src="/', html)
+        self.assertIn('Versão: __DEPLOY_SHA__', html)
 
     def test_pacote_nao_contem_dados_privados(self):
         conteudo = '\n'.join(

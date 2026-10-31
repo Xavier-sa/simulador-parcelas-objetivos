@@ -38,6 +38,7 @@ class TestePipeline(unittest.TestCase):
         self.assertNotIn('git push --force', self.cd)
         self.assertIn('git commit --allow-empty', self.cd)
         self.assertIn('deployment-commit', self.cd)
+        self.assertIn("html.replace('__DEPLOY_SHA__', sha)", self.cd)
         self.assertIn('Verificar publicação da Hostinger', self.cd)
 
     def test_cd_publica_somente_tres_arquivos(self):

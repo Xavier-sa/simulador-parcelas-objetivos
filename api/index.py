@@ -2,7 +2,6 @@
 import json
 import os
 import sys
-from datetime import date
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
 from urllib.parse import parse_qs, urlsplit
@@ -10,7 +9,7 @@ from urllib.parse import parse_qs, urlsplit
 RAIZ = Path(__file__).resolve().parent.parent
 sys.path.insert(0, str(RAIZ / 'backend'))
 from parcelas import resumo, resumo_financeiro  # noqa: E402
-from api.demo_data import DEMO_PARCELAMENTOS  # noqa: E402
+from api.demo_data import DATA_BASE_DEMONSTRACAO, DEMO_PARCELAMENTOS  # noqa: E402
 
 ROTAS_GET = {'/api/health', '/api/resumo', '/api/parcelamentos'}
 ORIGENS_LOCAIS = {'http://localhost:8000', 'http://127.0.0.1:8000'}
@@ -69,10 +68,11 @@ class handler(BaseHTTPRequestHandler):
 
     def do_GET(self):
         caminho = caminho_publico(self.path)
-        referencia = date.today().isoformat()
+        referencia = DATA_BASE_DEMONSTRACAO
         if caminho == '/api/health':
             return self.responder(200, {'status': 'ok', 'servico': 'objetivos-api',
-                                        'modo': 'demonstracao', 'somente_leitura': True})
+                                        'modo': 'demonstracao', 'somente_leitura': True,
+                                        'data_base': referencia})
         if caminho == '/api/parcelamentos':
             itens = [resumo(item, referencia) for item in DEMO_PARCELAMENTOS]
             return self.responder(200, {'demonstracao': True, 'parcelamentos': itens})

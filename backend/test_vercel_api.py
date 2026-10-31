@@ -50,6 +50,18 @@ class TesteAPIPublica(unittest.TestCase):
             dados = json.loads(corpo)
             self.assertTrue(dados.get('demonstracao') or dados.get('modo') == 'demonstracao')
 
+    def test_resumo_publico_tem_resultados_financeiros_confirmados(self):
+        status, _, corpo = self.requisitar('GET', '/api/resumo')
+        self.assertEqual(status, 200)
+        dados = json.loads(corpo)
+        self.assertEqual(dados['data_referencia'], '2026-10-29')
+        self.assertEqual(dados['total_contratado'], '73700.00')
+        self.assertEqual(dados['total_pago'], '36300.00')
+        self.assertEqual(dados['saldo_restante'], '37400.00')
+        self.assertEqual(dados['mensalidade_combinada'], '1100.00')
+        self.assertEqual([item['quantidade_paga'] for item in dados['parcelamentos']], [33, 33])
+        self.assertEqual([len(item['historico']) for item in dados['parcelamentos']], [67, 67])
+
     def test_cors_permita_hostinger_e_recuse_origem_desconhecida(self):
         status, headers, _ = self.requisitar('GET', '/api/health', 'https://simulador-parcelas.wasxtech.com.br')
         self.assertEqual(status, 200)
